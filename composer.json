@@ -1,0 +1,15 @@
+{
+  "name": "alfacode-team/php-io-cli",
+  "description": "Auto-generated module",
+  "type": "library",
+  "autoload": {
+    "psr-4": {
+      "AlfacodeTeam\\PhpIoCli\\": "src/"
+    }
+  },
+  "require": {
+    "php": "^8.2"
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true
+}
