@@ -56,6 +56,8 @@ final class Colors
     public const MAGENTA = "\033[35m";
     public const CYAN    = "\033[36m";
     public const GRAY    = "\033[90m";
+    public const BLACK   = "\033[30m";
+    public const BG_CYAN = "\033[46m";
 
     /* --- Core --- */
 
