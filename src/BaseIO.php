@@ -1,26 +1,22 @@
-<?php declare(strict_types=1);
-
-/*
- * This file is part of Composer.
- *
- * (c) Nils Adermann <naderman@naderman.de>
- *     Jordi Boggiano <j.boggiano@seld.be>
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
+<?php
+declare(strict_types=1);
 
 namespace AlfacodeTeam\PhpIoCli;
 
+use AlfacodeTeam\PhpIoCli\Depends\Colors;
 use Psr\Log\LogLevel;
+use Stringable;
 
+/**
+ * Enterprise Base IO
+ * Bridges PSR-3 Logging with ANSI CLI Output.
+ */
 abstract class BaseIO implements IOInterface
 {
-
     /**
      * @inheritDoc
      */
-    public function writeRaw($messages, bool $newline = true, int $verbosity = self::NORMAL)
+    public function writeRaw($messages, bool $newline = true, int $verbosity = self::NORMAL): void
     {
         $this->write($messages, $newline, $verbosity);
     }
@@ -28,101 +24,86 @@ abstract class BaseIO implements IOInterface
     /**
      * @inheritDoc
      */
-    public function writeErrorRaw($messages, bool $newline = true, int $verbosity = self::NORMAL)
+    public function writeErrorRaw($messages, bool $newline = true, int $verbosity = self::NORMAL): void
     {
         $this->writeError($messages, $newline, $verbosity);
     }
-    /**
-     * @param string|\Stringable $message
-     */
-    public function emergency($message, array $context = []): void
-    {
-        $this->log(LogLevel::EMERGENCY, $message, $context);
-    }
+
+    /* =========================================================
+       PSR-3 IMPLEMENTATION
+    ========================================================= */
+
+    public function emergency(string|Stringable $message, array $context = []): void 
+    { $this->log(LogLevel::EMERGENCY, $message, $context); }
+
+    public function alert(string|Stringable $message, array $context = []): void 
+    { $this->log(LogLevel::ALERT, $message, $context); }
+
+    public function critical(string|Stringable $message, array $context = []): void 
+    { $this->log(LogLevel::CRITICAL, $message, $context); }
+
+    public function error(string|Stringable $message, array $context = []): void 
+    { $this->log(LogLevel::ERROR, $message, $context); }
+
+    public function warning(string|Stringable $message, array $context = []): void 
+    { $this->log(LogLevel::WARNING, $message, $context); }
+
+    public function notice(string|Stringable $message, array $context = []): void 
+    { $this->log(LogLevel::NOTICE, $message, $context); }
+
+    public function info(string|Stringable $message, array $context = []): void 
+    { $this->log(LogLevel::INFO, $message, $context); }
+
+    public function debug(string|Stringable $message, array $context = []): void 
+    { $this->log(LogLevel::DEBUG, $message, $context); }
 
     /**
-     * @param string|\Stringable $message
-     */
-    public function alert($message, array $context = []): void
-    {
-        $this->log(LogLevel::ALERT, $message, $context);
-    }
-
-    /**
-     * @param string|\Stringable $message
-     */
-    public function critical($message, array $context = []): void
-    {
-        $this->log(LogLevel::CRITICAL, $message, $context);
-    }
-
-    /**
-     * @param string|\Stringable $message
-     */
-    public function error($message, array $context = []): void
-    {
-        $this->log(LogLevel::ERROR, $message, $context);
-    }
-
-    /**
-     * @param string|\Stringable $message
-     */
-    public function warning($message, array $context = []): void
-    {
-        $this->log(LogLevel::WARNING, $message, $context);
-    }
-
-    /**
-     * @param string|\Stringable $message
-     */
-    public function notice($message, array $context = []): void
-    {
-        $this->log(LogLevel::NOTICE, $message, $context);
-    }
-
-    /**
-     * @param string|\Stringable $message
-     */
-    public function info($message, array $context = []): void
-    {
-        $this->log(LogLevel::INFO, $message, $context);
-    }
-
-    /**
-     * @param string|\Stringable $message
-     */
-    public function debug($message, array $context = []): void
-    {
-        $this->log(LogLevel::DEBUG, $message, $context);
-    }
-
-    /**
+     * Core logging logic with Silencer and ANSI themes.
+     * 
      * @param mixed|LogLevel::* $level
-     * @param string|\Stringable $message
+     * @param string|Stringable $message
      */
     public function log($level, $message, array $context = []): void
     {
-        $message = (string) $message;
+        $output = (string) $message;
 
+        // Use the improved Silencer to safely encode context
         if ($context !== []) {
-            $json = Silencer::call('json_encode', $context, JSON_INVALID_UTF8_IGNORE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-            if ($json !== false) {
-                $message .= ' ' . $json;
+            $json = Silencer::call(static fn() => json_encode(
+                $context, 
+                JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_IGNORE
+            ));
+            
+            if ($json) {
+                $output .= ' ' . Colors::muted($json);
             }
         }
 
-        if (in_array($level,[LogLevel::EMERGENCY, LogLevel::ALERT, LogLevel::CRITICAL, LogLevel::ERROR], true)) {
-            $this->writeError('<error>' . $message . '</error>');
-        } elseif ($level === LogLevel::WARNING) {
-            // Changed <warning> to <comment> so Symfony makes it yellow
-            $this->writeError('<comment>' . $message . '</comment>'); 
-        } elseif ($level === LogLevel::NOTICE) {
-            $this->writeError('<info>' . $message . '</info>', true, self::VERBOSE);
-        } elseif ($level === LogLevel::INFO) {
-            // Changed self::VERY_VERBOSE to self::NORMAL so it prints by default
-            $this->writeError('<info>' . $message . '</info>', true, self::NORMAL); 
-        } else {
-            $this->writeError($message, true, self::DEBUG);
+        // Map levels using PHP 8 match for Enterprise performance
+        $formatted = match ($level) {
+            LogLevel::EMERGENCY,
+            LogLevel::ALERT,
+            LogLevel::CRITICAL,
+            LogLevel::ERROR   => Colors::error($output),
+            LogLevel::WARNING => Colors::warning($output),
+            LogLevel::NOTICE,
+            LogLevel::INFO    => Colors::info($output),
+            default           => Colors::muted($output),
+        };
+
+        // Determine target and verbosity
+        $targetVerbosity = match ($level) {
+            LogLevel::NOTICE => self::VERBOSE,
+            LogLevel::DEBUG  => self::DEBUG,
+            default          => self::NORMAL,
+        };
+
+        // If it's a high-priority error level, use writeError
+        if (in_array($level, [LogLevel::EMERGENCY, LogLevel::ALERT, LogLevel::CRITICAL, LogLevel::ERROR, LogLevel::WARNING], true)) {
+            $this->writeError($formatted, true, $targetVerbosity);
+            return;
         }
+
+        $this->write($formatted, true, $targetVerbosity);
     }
 }

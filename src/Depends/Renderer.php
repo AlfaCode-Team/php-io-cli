@@ -3,14 +3,14 @@ declare(strict_types=1);
 
 namespace AlfacodeTeam\PhpIoCli\Depends;
 
-/* =========================================================
-   RENDERER (scroll windowing + spinner)
-========================================================= */
-
+/**
+ * Renders the CLI UI with scroll windowing, state management, and ANSI optimization.
+ */
 final class Renderer
 {
     private int $lastLines = 0;
     private Spinner $spinner;
+    private bool $cursorHidden = false;
 
     public function __construct()
     {
@@ -19,6 +19,13 @@ final class Renderer
 
     public function render(State $state): void
     {
+        // 1. Hide cursor on first render
+        if (!$this->cursorHidden) {
+            echo "\033[?25l"; 
+            $this->cursorHidden = true;
+        }
+
+        // 2. Move cursor back to the start of our component block
         if ($this->lastLines > 0) {
             echo "\033[{$this->lastLines}A";
         }
@@ -26,86 +33,100 @@ final class Renderer
         $lines = [];
 
         // HEADER
-        $lines[] = Colors::wrap($state->question, Colors::BOLD . Colors::CYAN);
+        $lines[] = Colors::wrap($state->question, [Colors::BOLD, Colors::CYAN]);
 
-        // SEARCH
-        $lines[] = Colors::wrap('Search: ', Colors::GRAY)
-            . Colors::wrap($state->search ?: '...', Colors::YELLOW);
+        // SEARCH (Add a blinking-style cursor representation)
+        $searchQuery = $state->search ?: Colors::wrap('...', Colors::GRAY);
+        $lines[] = Colors::wrap('Search: ', Colors::GRAY) . Colors::wrap($searchQuery, Colors::YELLOW);
+        $lines[] = ''; // Spacer
 
-        // LOADING STATE (async simulation)
+        // LOADING STATE
         if ($state->loading) {
-            $lines[] = Colors::wrap(
-                "Loading " . $this->spinner->tick(),
-                Colors::CYAN
-            );
-
-            $this->print($lines);
+            $lines[] = Colors::wrap("  " . $this->spinner->tick() . " Loading...", Colors::CYAN);
+            $this->display($lines);
             return;
         }
 
         $filtered = $state->filtered();
 
-        /* =====================================================
-           SCROLL WINDOWING (important for 1000+ items)
-        ===================================================== */
-
-        $windowSize = 10;
-        $half = (int) floor($windowSize / 2);
-
-        $start = max(0, $state->index - $half);
-        $end = min(count($filtered), $start + $windowSize);
-
-        if ($end - $start < $windowSize) {
-            $start = max(0, $end - $windowSize);
+        // EMPTY STATE
+        if (empty($filtered)) {
+            $lines[] = Colors::wrap("  ✘ No results found.", Colors::RED);
+            $this->display($lines);
+            return;
         }
 
-        $visible = array_slice($filtered, $start, $windowSize);
+        /* =====================================================
+           SCROLL WINDOWING
+        ===================================================== */
+        $windowSize = 10;
+        $totalItems = count($filtered);
+        
+        $start = (int) max(0, min($state->index - floor($windowSize / 2), $totalItems - $windowSize));
+        $end = (int) min($totalItems, $start + $windowSize);
 
-        foreach ($visible as $i => $label) {
+        // Scroll Indicators
+        $lines[] = ($start > 0) ? Colors::wrap("   ↑ more items", Colors::GRAY) : " ";
 
+        foreach (array_slice($filtered, $start, $windowSize) as $i => $label) {
             $realIndex = $start + $i;
-
             $isActive = $realIndex === $state->index;
             $isSelected = in_array($label, $state->selected, true);
 
             $pointer = $isActive ? Colors::wrap('›', Colors::GREEN) : ' ';
-
-            $checkbox = $state->multi
-                ? ($isSelected
-                    ? Colors::wrap('[x]', Colors::GREEN)
-                    : Colors::wrap('[ ]', Colors::GRAY))
-                : '  ';
+            
+            $checkbox = '';
+            if ($state->multi) {
+                $checkbox = $isSelected 
+                    ? Colors::wrap('⬢', Colors::GREEN) // Use modern symbols
+                    : Colors::wrap('⬡', Colors::GRAY);
+            }
 
             $text = $label;
-
             if ($isActive) {
-                $text = Colors::wrap($text, Colors::YELLOW);
+                $text = Colors::wrap($text, [Colors::YELLOW, Colors::BOLD]);
             } elseif ($isSelected) {
                 $text = Colors::wrap($text, Colors::GREEN);
             } else {
                 $text = Colors::wrap($text, Colors::DIM);
             }
 
-            $lines[] = "{$pointer} {$checkbox} {$text}";
+            $lines[] = " {$pointer} {$checkbox} {$text}";
         }
 
-        $lines[] = '';
-        $lines[] = Colors::wrap(
-            $state->multi
-                ? "↑↓/j k nav | space toggle | enter confirm"
-                : "↑↓/j k nav | enter confirm",
-            Colors::GRAY
-        );
+        $lines[] = ($end < $totalItems) ? Colors::wrap("   ↓ more items", Colors::GRAY) : " ";
 
-        $this->print($lines);
+        // FOOTER
+        $lines[] = '';
+        $help = $state->multi
+            ? "↑↓ nav • space toggle • enter confirm"
+            : "↑↓ nav • enter confirm";
+        $lines[] = Colors::wrap($help, Colors::GRAY);
+
+        $this->display($lines);
     }
 
-    private function print(array $lines): void
+    /**
+     * Final output to terminal
+     */
+    private function display(array $lines): void
     {
+        $output = "";
         foreach ($lines as $line) {
-            echo "\033[2K\r" . $line . PHP_EOL;
+            // \033[2K = Clear line, \r = Carriage return to start
+            $output .= "\033[2K\r" . $line . PHP_EOL;
         }
 
+        echo $output;
         $this->lastLines = count($lines);
+    }
+
+    /**
+     * Restore terminal state on exit
+     */
+    public function __destruct()
+    {
+        // Show cursor again
+        echo "\033[?25h";
     }
 }

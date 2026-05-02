@@ -1,0 +1,7 @@
+parameters:
+    level: 8
+    paths:
+        - src
+    ignoreErrors:
+        # Allows magic property access on the State object
+        - '#Access to an undefined property AlfacodeTeam\\PhpIoCli\\Depends\\State::\$[a-zA-Z0-9_]+#'

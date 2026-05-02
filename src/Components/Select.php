@@ -1,85 +1,109 @@
 <?php
+declare(strict_types=1);
+
 namespace AlfacodeTeam\PhpIoCli\Components;
 
 use AlfacodeTeam\PhpIoCli\Depends\Colors;
 use AlfacodeTeam\PhpIoCli\Depends\Fuzzy;
-use AlfacodeTeam\PhpIoCli\Depends\Terminal;
+use AlfacodeTeam\PhpIoCli\Depends\Key;
+
 final class Select extends Component
 {
-    private array $choices;
-    private int $index = 0;
-    private string $search = '';
-    private mixed $result = null;
+    private int $lastRenderedLines = 0;
 
-    public function __construct(string $question, array $choices)
-    {
-        $this->choices = $choices;
+    public function __construct(
+        private string $question,
+        private array $choices
+    ) {
         parent::__construct();
     }
 
+    /**
+     * Use the reactive State and Input classes you built.
+     */
     protected function setup(): void
     {
         $this->state->batch([
-            'done' => false,
+            'index' => 0,
+            'search' => '',
+            'choices' => $this->choices,
+            'result' => null,
         ]);
+
+        // Bind navigation using the Input dispatcher
+        $this->input->bind('UP', function($state) {
+            $state->decrement('index');
+        });
+
+        $this->input->bind('DOWN', function($state) {
+            $count = count($this->getFiltered());
+            $state->increment('index', $count > 0 ? $count - 1 : 0);
+        });
+
+        $this->input->bind('ENTER', function($state) {
+            $filtered = $this->getFiltered();
+            $state->result = $filtered[$state->index] ?? null;
+            $this->stop();
+        });
+
+        $this->input->bind('BACKSPACE', function($state) {
+            $state->search = mb_substr($state->search, 0, -1);
+            $state->index = 0;
+        });
+
+        // Handle typing (Fallback)
+        $this->input->fallback(function($state, $key) {
+            if (Key::isPrintable($key)) {
+                $state->search .= $key;
+                $state->index = 0;
+            }
+        });
     }
 
     public function render(): void
     {
-        Terminal::clearScreen();
-
-        echo Colors::wrap("Select option", Colors::BOLD) . PHP_EOL;
-
-        foreach ($this->filtered() as $i => $item) {
-
-            $active = $i === $this->index;
-
-            echo $active
-                ? Colors::wrap("› {$item}", [Colors::GREEN, Colors::BOLD])
-                : "  " . Colors::wrap($item, Colors::GRAY);
-
-            echo PHP_EOL;
+        // 1. Instead of clearScreen (flicker), move cursor back up
+        if ($this->lastRenderedLines > 0) {
+            echo "\033[{$this->lastRenderedLines}A";
         }
-    }
 
-    public function update(string $key): void
-    {
-        $items = $this->filtered();
+        $lines = [];
 
-        match ($key) {
+        // 2. Build the UI
+        $lines[] = Colors::wrap("? ", Colors::CYAN) . Colors::wrap($this->question, Colors::BOLD);
+        $lines[] = Colors::wrap("› ", Colors::GRAY) . Colors::wrap($this->state->search ?: 'Type to search...', $this->state->search ? Colors::YELLOW : Colors::DIM);
+        $lines[] = "";
 
-            'UP' => $this->index = max(0, $this->index - 1),
-            'DOWN' => $this->index = min(count($items) - 1, $this->index + 1),
+        $filtered = $this->getFiltered();
 
-            'ENTER' => $this->submit($items),
+        if (empty($filtered)) {
+            $lines[] = Colors::wrap("  No results found.", Colors::RED);
+        } else {
+            foreach ($filtered as $i => $item) {
+                $active = $i === $this->state->index;
+                $lines[] = $active
+                    ? Colors::wrap(" › {$item}", [Colors::GREEN, Colors::BOLD])
+                    : "   " . Colors::wrap($item, Colors::GRAY);
+            }
+        }
 
-            'BACKSPACE' => $this->search = mb_substr($this->search, 0, -1),
+        // 3. Clear and print (Buffer-style to prevent tearing)
+        $output = "";
+        foreach ($lines as $line) {
+            $output .= "\033[2K\r" . $line . PHP_EOL;
+        }
 
-            default => $this->handleInput($key),
-        };
+        echo $output;
+        $this->lastRenderedLines = count($lines);
     }
 
     public function resolve(): mixed
     {
-        return $this->result;
+        return $this->state->result;
     }
 
-    private function handleInput(string $key): void
+    private function getFiltered(): array
     {
-        if (strlen($key) === 1 && ctype_print($key)) {
-            $this->search .= $key;
-            $this->index = 0;
-        }
-    }
-
-    private function submit(array $items): void
-    {
-        $this->result = $items[$this->index] ?? null;
-        $this->stop();
-    }
-
-    private function filtered(): array
-    {
-        return Fuzzy::filter($this->choices, $this->search);
+        return Fuzzy::filter($this->choices, $this->state->search);
     }
 }

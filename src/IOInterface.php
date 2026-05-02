@@ -1,23 +1,12 @@
-<?php declare(strict_types=1);
-
-/*
- * This file is part of Composer.
- *
- * (c) Nils Adermann <naderman@naderman.de>
- *     Jordi Boggiano <j.boggiano@seld.be>
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
+<?php
+declare(strict_types=1);
 
 namespace AlfacodeTeam\PhpIoCli;
 
 use Psr\Log\LoggerInterface;
 
 /**
- * The Input/Output helper interface.
- *
- * @author François Pluchino <francois.pluchino@opendisplay.com>
+ * The unified Input/Output helper interface.
  */
 interface IOInterface extends LoggerInterface
 {
@@ -27,174 +16,60 @@ interface IOInterface extends LoggerInterface
     public const VERY_VERBOSE = 8;
     public const DEBUG = 16;
 
-    /**
-     * Is this input means interactive?
-     *
-     * @return bool
-     */
-    public function isInteractive();
+    public function isInteractive(): bool;
+    public function isVerbose(): bool;
+    public function isVeryVerbose(): bool;
+    public function isDebug(): bool;
+    public function isDecorated(): bool;
 
     /**
-     * Is this output verbose?
-     *
-     * @return bool
+     * @param string|string[] $messages
      */
-    public function isVerbose();
+    public function write($messages, bool $newline = true, int $verbosity = self::NORMAL): void;
 
     /**
-     * Is the output very verbose?
-     *
-     * @return bool
+     * @param string|string[] $messages
      */
-    public function isVeryVerbose();
+    public function writeError($messages, bool $newline = true, int $verbosity = self::NORMAL): void;
+
+    public function writeRaw($messages, bool $newline = true, int $verbosity = self::NORMAL): void;
+
+    public function writeErrorRaw($messages, bool $newline = true, int $verbosity = self::NORMAL): void;
 
     /**
-     * Is the output in debug verbosity?
-     *
-     * @return bool
+     * @param string|string[] $messages
      */
-    public function isDebug();
+    public function overwrite($messages, bool $newline = true, ?int $size = null, int $verbosity = self::NORMAL): void;
 
     /**
-     * Is this output decorated?
-     *
-     * @return bool
+     * @param string|string[] $messages
      */
-    public function isDecorated();
+    public function overwriteError($messages, bool $newline = true, ?int $size = null, int $verbosity = self::NORMAL): void;
+
+    /* =========================================================
+       INTERACTIVE METHODS
+       Note: These can be implemented by calling your 
+       reactive components (e.g. Select.php) internally.
+    ========================================================= */
+
+    public function ask(string $question, mixed $default = null): mixed;
+
+    public function askConfirmation(string $question, bool $default = true): bool;
+
+    public function askAndValidate(string $question, callable $validator, ?int $attempts = null, mixed $default = null): mixed;
+
+    public function askAndHideAnswer(string $question): ?string;
 
     /**
-     * Writes a message to the output.
-     *
-     * @param string|string[] $messages  The message as an array of lines or a single string
-     * @param bool            $newline   Whether to add a newline or not
-     * @param int             $verbosity Verbosity level from the VERBOSITY_* constants
-     *
-     * @return void
-     */
-    public function write($messages, bool $newline = true, int $verbosity = self::NORMAL);
-
-    /**
-     * Writes a message to the error output.
-     *
-     * @param string|string[] $messages  The message as an array of lines or a single string
-     * @param bool            $newline   Whether to add a newline or not
-     * @param int             $verbosity Verbosity level from the VERBOSITY_* constants
-     *
-     * @return void
-     */
-    public function writeError($messages, bool $newline = true, int $verbosity = self::NORMAL);
-
-    /**
-     * Writes a message to the output, without formatting it.
-     *
-     * @param string|string[] $messages  The message as an array of lines or a single string
-     * @param bool            $newline   Whether to add a newline or not
-     * @param int             $verbosity Verbosity level from the VERBOSITY_* constants
-     *
-     * @return void
-     */
-    public function writeRaw($messages, bool $newline = true, int $verbosity = self::NORMAL);
-
-    /**
-     * Writes a message to the error output, without formatting it.
-     *
-     * @param string|string[] $messages  The message as an array of lines or a single string
-     * @param bool            $newline   Whether to add a newline or not
-     * @param int             $verbosity Verbosity level from the VERBOSITY_* constants
-     *
-     * @return void
-     */
-    public function writeErrorRaw($messages, bool $newline = true, int $verbosity = self::NORMAL);
-
-    /**
-     * Overwrites a previous message to the output.
-     *
-     * @param string|string[] $messages  The message as an array of lines or a single string
-     * @param bool            $newline   Whether to add a newline or not
-     * @param int             $size      The size of line
-     * @param int             $verbosity Verbosity level from the VERBOSITY_* constants
-     *
-     * @return void
-     */
-    public function overwrite($messages, bool $newline = true, ?int $size = null, int $verbosity = self::NORMAL);
-
-    /**
-     * Overwrites a previous message to the error output.
-     *
-     * @param string|string[] $messages  The message as an array of lines or a single string
-     * @param bool            $newline   Whether to add a newline or not
-     * @param int             $size      The size of line
-     * @param int             $verbosity Verbosity level from the VERBOSITY_* constants
-     *
-     * @return void
-     */
-    public function overwriteError($messages, bool $newline = true, ?int $size = null, int $verbosity = self::NORMAL);
-
-    /**
-     * Asks a question to the user.
-     *
-     * @param string $question The question to ask
-     * @param string|bool|int|float|null $default  The default answer if none is given by the user
-     *
-     * @throws \RuntimeException If there is no data to read in the input stream
-     * @return mixed       The user answer
-     */
-    public function ask(string $question, $default = null);
-
-    /**
-     * Asks a confirmation to the user.
-     *
-     * The question will be asked until the user answers by nothing, yes, or no.
-     *
-     * @param string $question The question to ask
-     * @param bool   $default  The default answer if the user enters nothing
-     *
-     * @return bool true if the user has confirmed, false otherwise
-     */
-    public function askConfirmation(string $question, bool $default = true);
-
-    /**
-     * Asks for a value and validates the response.
-     *
-     * The validator receives the data to validate. It must return the
-     * validated data when the data is valid and throw an exception
-     * otherwise.
-     *
-     * @param string   $question  The question to ask
-     * @param callable $validator A PHP callback
-     * @param null|int $attempts  Max number of times to ask before giving up (default of null means infinite)
-     * @param mixed    $default   The default answer if none is given by the user
-     *
-     * @throws \Exception When any of the validators return an error
-     * @return mixed
-     */
-    public function askAndValidate(string $question, callable $validator, ?int $attempts = null, $default = null);
-
-    /**
-     * Asks a question to the user and hide the answer.
-     *
-     * @param string $question The question to ask
-     *
-     * @return string|null The answer
-     */
-    public function askAndHideAnswer(string $question);
-
-    /**
-     * Asks the user to select a value.
-     *
-     * @param string      $question     The question to ask
-     * @param string[]    $choices      List of choices to pick from
-     * @param bool|string $default      The default answer if the user enters nothing
-     * @param bool|int    $attempts     Max number of times to ask before giving up (false by default, which means infinite)
-     * @param string      $errorMessage Message which will be shown if invalid value from choice list would be picked
-     * @param bool        $multiselect  Select more than one value separated by comma
-     *
-     * @throws \InvalidArgumentException
-     *
-     * @return int|string|list<string>|bool     The selected value or values (the key of the choices array)
+     * @param string[] $choices
      * @phpstan-return ($multiselect is true ? list<string> : string|int|bool)
      */
-    public function select(string $question, array $choices, $default, $attempts = false, string $errorMessage = 'Value "%s" is invalid', bool $multiselect = false);
-
-   
+    public function select(
+        string $question, 
+        array $choices, 
+        mixed $default, 
+        bool|int $attempts = false, 
+        string $errorMessage = 'Value "%s" is invalid', 
+        bool $multiselect = false
+    ): int|string|array|bool;
 }

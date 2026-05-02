@@ -3,25 +3,25 @@ declare(strict_types=1);
 
 namespace AlfacodeTeam\PhpIoCli\Depends;
 
-/* =========================================================
-   LEVENSHTEIN FUZZY MATCH (Laravel Prompts-like ranking)
-========================================================= */
 final class Fuzzy
 {
-    /* =========================================================
-       PUBLIC API
-    ========================================================= */
-
-    public static function filter(array $items, string $query): array
+    /**
+     * Filter and rank items based on a query.
+     */
+    public static function filter(array $items, string $query, int $minScore = 0): array
     {
         if ($query === '') {
             return $items;
         }
 
         $scored = [];
-
         foreach ($items as $index => $item) {
-            $scored[$index] = self::score($query, (string) $item, $index);
+            $score = self::score($query, (string) $item, $index);
+            
+            // Only include items that meet a minimum relevancy threshold
+            if ($score > $minScore) {
+                $scored[$index] = $score;
+            }
         }
 
         arsort($scored, SORT_NUMERIC);
@@ -32,72 +32,80 @@ final class Fuzzy
         );
     }
 
-    /* =========================================================
-       CORE SCORING
-    ========================================================= */
-
+    /**
+     * Calculate a ranking score for a value against a query.
+     */
     public static function score(string $query, string $value, int $tieBreaker = 0): int
     {
-        $query = strtolower(trim($query));
-        $value = strtolower(trim($value));
+        $query = mb_strtolower(trim($query));
+        $value = mb_strtolower(trim($value));
 
-        if ($query === '') {
-            return 0;
-        }
+        if ($query === '') return 0;
+        if ($query === $value) return 10000;
 
-        // 1. exact match
-        if ($query === $value) {
-            return 10000;
-        }
+        $score = 0;
 
-        // 2. prefix match (very strong)
+        // 1. Prefix Match
         if (str_starts_with($value, $query)) {
-            return 9000 - strlen($value);
+            $score = 9000 - mb_strlen($value);
+        } 
+        // 2. Substring Match
+        elseif (str_contains($value, $query)) {
+            $score = 8000 - mb_strlen($value);
+        }
+        // 3. Abbreviation / "In-order" Match (e.g., "gc" matches "git commit")
+        elseif (self::isAbbreviation($query, $value)) {
+            $score = 7000 - mb_strlen($value);
         }
 
-        // 3. substring match
-        if (str_contains($value, $query)) {
-            return 8000 - strlen($value);
-        }
-
-        // 4. token-based match (important for multi-word search)
+        // 4. Token-based match (multi-word)
         $queryTokens = explode(' ', $query);
         $valueTokens = explode(' ', $value);
+        $score += self::tokenScore($queryTokens, $valueTokens);
 
-        $tokenScore = self::tokenScore($queryTokens, $valueTokens);
+        // 5. Levenshtein (Only if strings are within PHP's 255 char limit)
+        if (mb_strlen($query) < 255 && mb_strlen($value) < 255) {
+            $distance = levenshtein($query, $value);
+            // If distance is large relative to length, it's a poor match
+            $levScore = max(0, 2000 - ($distance * 20));
+            $score += $levScore;
+        }
 
-        // 5. levenshtein fallback (last resort)
-        $distance = levenshtein($query, $value);
-        $levScore = max(0, 5000 - ($distance * 10));
-
-        // final weighted score
-        $score = $tokenScore + $levScore;
-
-        // tie breaker for stable ordering
+        // Final score minus tiebreaker for stable sorting
         return $score - $tieBreaker;
     }
 
-    /* =========================================================
-       TOKEN MATCHING (fzf-style behavior)
-    ========================================================= */
+    /**
+     * Checks if characters in the query appear in order within the value.
+     */
+    private static function isAbbreviation(string $query, string $value): bool
+    {
+        $qLen = mb_strlen($query);
+        $vLen = mb_strlen($value);
+        
+        if ($qLen > $vLen) return false;
+
+        $qIdx = 0;
+        for ($vIdx = 0; $vIdx < $vLen; $vIdx++) {
+            if ($value[$vIdx] === $query[$qIdx]) {
+                $qIdx++;
+            }
+            if ($qIdx === $qLen) return true;
+        }
+
+        return false;
+    }
 
     private static function tokenScore(array $queryTokens, array $valueTokens): int
     {
         $score = 0;
-
         foreach ($queryTokens as $q) {
+            if ($q === '') continue;
             foreach ($valueTokens as $v) {
-
-                if ($q === $v) {
-                    $score += 200;
-                } elseif (str_starts_with($v, $q)) {
-                    $score += 120;
-                } elseif (str_contains($v, $q)) {
-                    $score += 80;
-                }
+                if ($q === $v) $score += 500;
+                elseif (str_starts_with($v, $q)) $score += 200;
             }
         }
-
         return $score;
     }
 }

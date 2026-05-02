@@ -3,65 +3,108 @@ declare(strict_types=1);
 
 namespace AlfacodeTeam\PhpIoCli\Depends;
 
-/* =========================================================
-   STATE
-========================================================= */
+use Closure;
 
+/**
+ * Reactive State Container
+ * Handles data storage, property watching, and CLI-specific state mutations.
+ */
 final class State
 {
+    /** @var array<string, mixed> */
     private array $data = [];
+
+    /** @var array<string, array<int, Closure>> */
     private array $watchers = [];
 
-    /* =========================================================
-       GET / SET
-    ========================================================= */
+    public function __construct(array $initialData = [])
+    {
+        $this->data = $initialData;
+    }
+
+    /* --- Magic Access (Better DX) --- */
+
+    public function __get(string $key): mixed
+    {
+        return $this->get($key);
+    }
+
+    public function __set(string $key, mixed $value): void
+    {
+        $this->set($key, $value);
+    }
+
+    /* --- Core Get/Set --- */
 
     public function get(string $key, mixed $default = null): mixed
     {
         return $this->data[$key] ?? $default;
     }
 
-    public function set(string $key, mixed $value): void
+    public function set(string $key, mixed $value): self
     {
         $old = $this->data[$key] ?? null;
 
         if ($old === $value) {
-            return;
+            return $this;
         }
 
         $this->data[$key] = $value;
-
         $this->notify($key, $value, $old);
+
+        return $this;
     }
 
-    public function all(): array
-    {
-        return $this->data;
-    }
+    /* --- CLI Navigation Helpers (New!) --- */
 
-    public function has(string $key): bool
+    /**
+     * Increment a numeric value (e.g., selection index) with a ceiling.
+     */
+    public function increment(string $key, int $max): void
     {
-        return array_key_exists($key, $this->data);
-    }
-
-    /* =========================================================
-       BATCH UPDATE
-    ========================================================= */
-
-    public function batch(array $data): void
-    {
-        foreach ($data as $key => $value) {
-            $this->set($key, $value);
+        $current = (int) $this->get($key, 0);
+        if ($current < $max) {
+            $this->set($key, $current + 1);
         }
     }
 
-    /* =========================================================
-       WATCHERS (reactivity)
-    ========================================================= */
+    /**
+     * Decrement a numeric value with a floor of 0.
+     */
+    public function decrement(string $key): void
+    {
+        $current = (int) $this->get($key, 0);
+        if ($current > 0) {
+            $this->set($key, $current - 1);
+        }
+    }
 
-    public function watch(string $key, callable $callback): void
+    /**
+     * Toggle a value in an array (useful for multi-select).
+     */
+    public function toggle(string $key, mixed $value): void
+    {
+        $current = (array) $this->get($key, []);
+        $index = array_search($value, $current, true);
+
+        if ($index === false) {
+            $current[] = $value;
+        } else {
+            unset($current[$index]);
+        }
+
+        $this->set($key, array_values($current));
+    }
+
+    /* --- Reactivity --- */
+
+    /**
+     * @param Closure(mixed $new, mixed $old, self $state): void $callback
+     */
+    public function watch(string $key, Closure $callback): self
     {
         $this->watchers[$key][] = $callback;
+        return $this;
     }
 
     private function notify(string $key, mixed $new, mixed $old): void
