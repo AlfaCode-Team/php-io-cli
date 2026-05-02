@@ -3,116 +3,121 @@ declare(strict_types=1);
 
 namespace AlfacodeTeam\PhpIoCli\Depends;
 
-/* =========================================================
-   WINDOWS COMPATIBILITY LAYER
-========================================================= */
-
+/**
+ * Battle-hardened Terminal Driver.
+ * Handles raw mode, escape sequences, and cross-platform VT100 support.
+ */
 final class Terminal
 {
     private static bool $rawEnabled = false;
     private static ?string $originalMode = null;
-
-    /* =========================================================
-       ENV DETECTION
-    ========================================================= */
 
     public static function isWindows(): bool
     {
         return PHP_OS_FAMILY === 'Windows';
     }
 
-    public static function isTty(): bool
-    {
-        return function_exists('stream_isatty')
-            ? stream_isatty(STDIN)
-            : posix_isatty(STDIN);
-    }
-
     /* =========================================================
-       RAW MODE (SAFE + RESTORABLE)
+       RAW MODE (Reliable + Clean Cleanup)
     ========================================================= */
 
     public static function enableRaw(): void
     {
-        if (self::$rawEnabled) {
+        if (self::$rawEnabled)
             return;
-        }
 
         if (self::isWindows()) {
-            // Windows 10+ supports ANSI, but raw mode is limited
-            // fallback: no-op (still usable)
-            self::$rawEnabled = true;
-            return;
+            // Enable ANSI/VT100 support for modern Windows Terminal/CMD
+            if (function_exists('sapi_windows_vt100_support')) {
+                @sapi_windows_vt100_support(STDOUT, true);
+                @sapi_windows_vt100_support(STDIN, true);
+            }
+        } else {
+            // Unix: Save current state and disable canonical mode/echo
+            self::$originalMode = shell_exec('stty -g');
+            // Enable raw mode
+            system('stty -icanon -echo min 1 time 0');
+
+            // Signal Handling: Restore terminal if user hits Ctrl+C
+            if (function_exists('pcntl_signal')) {
+                pcntl_async_signals(true);
+                pcntl_signal(SIGINT, fn() => self::exitGracefully());
+                pcntl_signal(SIGTERM, fn() => self::exitGracefully());
+            }
         }
 
-        // Save current terminal mode
-        self::$originalMode = shell_exec('stty -g');
-
-        // Enable raw mode
-        system('stty -icanon -echo min 1 time 0');
-
         self::$rawEnabled = true;
-
-        // Ensure restore on shutdown
         register_shutdown_function([self::class, 'disableRaw']);
+    }
+
+    private static function exitGracefully(): void
+    {
+        self::disableRaw();
+        echo PHP_EOL . Colors::error(" Process interrupted.") . PHP_EOL;
+        exit(1);
     }
 
     public static function disableRaw(): void
     {
-        if (!self::$rawEnabled) {
+        if (!self::$rawEnabled)
             return;
-        }
 
         if (!self::isWindows() && self::$originalMode) {
             system('stty ' . self::$originalMode);
         }
 
+        // Always show the cursor again on exit
+        echo "\033[?25h";
+
         self::$rawEnabled = false;
     }
 
     /* =========================================================
-       INPUT HANDLING
+       INPUT HANDLING (No-Ghosting Logic)
     ========================================================= */
 
     public static function readKey(): string
     {
         $char = fgetc(STDIN);
 
-        if ($char === "\033") {
+        // Check for Escape character (\e or \033)
+        if ($char === "\e") {
             return self::readEscapeSequence($char);
         }
 
-        return $char;
+        return (string) $char;
     }
 
+    /**
+     * Fixes the "Headache": 
+     * Uses a tiny 10ms settle-time to ensure multi-byte keys (Arrows, Home)
+     * are captured as a single string instead of being fragmented.
+     */
     private static function readEscapeSequence(string $first): string
     {
         $sequence = $first;
-
-        // Read next bytes (non-blocking style)
         stream_set_blocking(STDIN, false);
 
-        while (($char = fgetc(STDIN)) !== false) {
-            $sequence .= $char;
+        $start = microtime(true);
+        while ((microtime(true) - $start) < 0.01) { // 10ms window
+            $char = fgetc(STDIN);
+            if ($char !== false) {
+                $sequence .= $char;
+                $start = microtime(true); // reset window if we're still getting bytes
+            }
         }
 
         stream_set_blocking(STDIN, true);
-
         return $sequence;
     }
 
     /* =========================================================
-       OUTPUT HELPERS (USED BY RENDERER)
+       OUTPUT HELPERS
     ========================================================= */
-
-    public static function clearScreen(): void
-    {
-        echo "\033[2J\033[H";
-    }
 
     public static function clearLine(): void
     {
-        echo "\033[2K\r";
+        echo "\r\033[2K";
     }
 
     public static function moveCursorUp(int $lines = 1): void
@@ -120,22 +125,13 @@ final class Terminal
         echo "\033[{$lines}A";
     }
 
-    public static function moveCursorDown(int $lines = 1): void
+    public static function hideCursor(): void
     {
-        echo "\033[{$lines}B";
+        echo "\033[?25l";
     }
 
-    public static function moveCursorToStart(): void
+    public static function showCursor(): void
     {
-        echo "\r";
-    }
-
-    /* =========================================================
-       BUFFER CONTROL
-    ========================================================= */
-
-    public static function flush(): void
-    {
-        fflush(STDOUT);
+        echo "\033[?25h";
     }
 }

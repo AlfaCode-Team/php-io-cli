@@ -1,128 +1,46 @@
-<?php declare(strict_types=1);
-
-/*
- * This file is part of Composer.
- *
- * (c) Nils Adermann <naderman@naderman.de>
- *     Jordi Boggiano <j.boggiano@seld.be>
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
+<?php 
+declare(strict_types=1);
 
 namespace AlfacodeTeam\PhpIoCli;
 
 /**
- * IOInterface that is not interactive and never writes the output
- *
- * @author Christophe Coevoet <stof@notk.org>
+ * A silent, non-interactive IO implementation.
+ * Perfect for CI environments and unit tests.
  */
 class NullIO extends BaseIO
 {
-    /**
-     * @inheritDoc
-     */
-    public function isInteractive(): bool
-    {
-        return false;
-    }
+    public function isInteractive(): bool { return false; }
+    public function isVerbose(): bool     { return false; }
+    public function isVeryVerbose(): bool { return false; }
+    public function isDebug(): bool       { return false; }
+    public function isDecorated(): bool   { return false; }
 
-    /**
-     * @inheritDoc
-     */
-    public function isVerbose(): bool
-    {
-        return false;
-    }
+    public function write($messages, bool $newline = true, int $verbosity = self::NORMAL): void {}
+    public function writeError($messages, bool $newline = true, int $verbosity = self::NORMAL): void {}
+    public function overwrite($messages, bool $newline = true, ?int $size = null, int $verbosity = self::NORMAL): void {}
+    public function overwriteError($messages, bool $newline = true, ?int $size = null, int $verbosity = self::NORMAL): void {}
 
-    /**
-     * @inheritDoc
-     */
-    public function isVeryVerbose(): bool
-    {
-        return false;
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function isDebug(): bool
-    {
-        return false;
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function isDecorated(): bool
-    {
-        return false;
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function write($messages, bool $newline = true, int $verbosity = self::NORMAL): void
-    {
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function writeError($messages, bool $newline = true, int $verbosity = self::NORMAL): void
-    {
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function overwrite($messages, bool $newline = true, ?int $size = null, int $verbosity = self::NORMAL): void
-    {
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function overwriteError($messages, bool $newline = true, ?int $size = null, int $verbosity = self::NORMAL): void
-    {
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function ask($question, $default = null)
+    public function ask(string $question, mixed $default = null): mixed 
     {
         return $default;
     }
 
-    /**
-     * @inheritDoc
-     */
-    public function askConfirmation($question, $default = true): bool
+    public function askConfirmation(string $question, bool $default = true): bool 
     {
         return $default;
     }
 
-    /**
-     * @inheritDoc
-     */
-    public function askAndValidate($question, $validator, $attempts = null, $default = null)
+    public function askAndValidate(string $question, callable $validator, ?int $attempts = null, mixed $default = null): mixed 
     {
         return $default;
     }
 
-    /**
-     * @inheritDoc
-     */
-    public function askAndHideAnswer($question): ?string
+    public function askAndHideAnswer(string $question): ?string 
     {
         return null;
     }
 
-    /**
-     * @inheritDoc
-     */
-    public function select($question, $choices, $default, $attempts = false, $errorMessage = 'Value "%s" is invalid', $multiselect = false)
+    public function select(string $question, array $choices, mixed $default, bool|int $attempts = false, string $errorMessage = 'Value "%s" is invalid', bool $multiselect = false): int|string|array|bool
     {
         return $default;
     }

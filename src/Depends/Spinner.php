@@ -3,10 +3,6 @@ declare(strict_types=1);
 
 namespace AlfacodeTeam\PhpIoCli\Depends;
 
-/* =========================================================
-   SPINNER (async loading state)
-========================================================= */
-
 final class Spinner
 {
     private array $frames;
@@ -14,79 +10,46 @@ final class Spinner
     private float $interval;
     private float $lastTick = 0.0;
     private bool $running = false;
-    private string $message = '';
+    private string $currentFrame = '';
 
     public function __construct(
-        array $frames = SpinnerFrames::default(),
+        array $frames = null,
         float $interval = 0.1
     ) {
-        $this->frames = $frames;
+        $this->frames = $frames ?? SpinnerFrames::default();
         $this->interval = $interval;
+        $this->currentFrame = $this->frames[0];
     }
 
-    /* =========================================================
-       LIFECYCLE
-    ========================================================= */
-
-    public function start(string $message = ''): void
+    public function start(): void
     {
         $this->running = true;
-        $this->message = $message;
-        $this->render();
+        $this->lastTick = microtime(true);
     }
 
     public function stop(): void
     {
         $this->running = false;
-        $this->clearLine();
     }
 
-    /* =========================================================
-       TICK (non-blocking safe)
-    ========================================================= */
-
-    public function tick(): ?string
+    /**
+     * Updates the internal state and returns the current frame.
+     * This version does NOT echo, allowing the Renderer to handle layout.
+     */
+    public function tick(): string
     {
-        if (! $this->running) {
-            return null;
+        if (!$this->running) {
+            return '';
         }
 
         $now = microtime(true);
 
-        if (($now - $this->lastTick) < $this->interval) {
-            return null;
+        if (($now - $this->lastTick) >= $this->interval) {
+            $this->index++;
+            $this->lastTick = $now;
+            $this->currentFrame = $this->frames[$this->index % count($this->frames)];
         }
 
-        $this->lastTick = $now;
-
-        $frame = $this->frames[$this->index % count($this->frames)];
-        $this->index++;
-
-        $this->render($frame);
-
-        return $frame;
-    }
-
-    /* =========================================================
-       RENDER
-    ========================================================= */
-
-    private function render(?string $frame = null): void
-    {
-        $frame ??= $this->frames[$this->index % count($this->frames)];
-
-        $this->clearLine();
-
-        echo "{$frame} {$this->message}";
-        fflush(STDOUT);
-    }
-
-    /* =========================================================
-       TERMINAL CONTROL
-    ========================================================= */
-
-    private function clearLine(): void
-    {
-        echo "\r\033[2K";
+        return $this->currentFrame;
     }
 }

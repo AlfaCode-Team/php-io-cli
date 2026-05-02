@@ -1,414 +1,199 @@
-<?php declare(strict_types=1);
-
-/*
- * This file is part of Composer.
- *
- * (c) Nils Adermann <naderman@naderman.de>
- *     Jordi Boggiano <j.boggiano@seld.be>
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
+<?php 
+declare(strict_types=1);
 
 namespace AlfacodeTeam\PhpIoCli;
 
-use Composer\Pcre\Preg;
-use Composer\Question\StrictConfirmationQuestion;
+use AlfacodeTeam\PhpIoCli\Depends\Colors;
+use AlfacodeTeam\PhpIoCli\Components\Select as CustomSelect;
 use Symfony\Component\Console\Helper\HelperSet;
-use Symfony\Component\Console\Helper\ProgressBar;
-use Symfony\Component\Console\Helper\Table;
+use Symfony\Component\Console\Helper\QuestionHelper;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ChoiceQuestion;
+use Symfony\Component\Console\Question\ConfirmationQuestion;
 use Symfony\Component\Console\Question\Question;
 
 /**
- * The Input/Output helper.
- *
- * @author François Pluchino <francois.pluchino@opendisplay.com>
- * @author Jordi Boggiano <j.boggiano@seld.be>
+ * Enterprise bridge between Symfony Console and Alfacode components.
  */
 class ConsoleIO extends BaseIO
 {
-    /** @var InputInterface */
-    protected $input;
-    /** @var OutputInterface */
-    protected $output;
-    /** @var HelperSet */
-    protected $helperSet;
-    /** @var string */
-    protected $lastMessage = '';
-    /** @var string */
-    protected $lastMessageErr = '';
+    protected string $lastMessage = '';
+    protected string $lastMessageErr = '';
+    private ?float $startTime = null;
+    
+    private array $verbosityMap = [
+        self::QUIET         => OutputInterface::VERBOSITY_QUIET,
+        self::NORMAL        => OutputInterface::VERBOSITY_NORMAL,
+        self::VERBOSE       => OutputInterface::VERBOSITY_VERBOSE,
+        self::VERY_VERBOSE  => OutputInterface::VERBOSITY_VERY_VERBOSE,
+        self::DEBUG         => OutputInterface::VERBOSITY_DEBUG,
+    ];
 
-    /** @var float */
-    private $startTime;
-    /** @var array<IOInterface::*, OutputInterface::VERBOSITY_*> */
-    private $verbosityMap;
+    public function __construct(
+        protected InputInterface $input,
+        protected OutputInterface $output,
+        protected HelperSet $helperSet
+    ) {}
 
-    /**
-     * Constructor.
-     *
-     * @param InputInterface  $input     The input instance
-     * @param OutputInterface $output    The output instance
-     * @param HelperSet       $helperSet The helperSet instance
-     */
-    public function __construct(InputInterface $input, OutputInterface $output, HelperSet $helperSet)
-    {
-        $this->input = $input;
-        $this->output = $output;
-        $this->helperSet = $helperSet;
-        $this->verbosityMap = [
-            self::QUIET => OutputInterface::VERBOSITY_QUIET,
-            self::NORMAL => OutputInterface::VERBOSITY_NORMAL,
-            self::VERBOSE => OutputInterface::VERBOSITY_VERBOSE,
-            self::VERY_VERBOSE => OutputInterface::VERBOSITY_VERY_VERBOSE,
-            self::DEBUG => OutputInterface::VERBOSITY_DEBUG,
-        ];
-    }
-
-    /**
-     * @return void
-     */
-    public function enableDebugging(float $startTime)
+    public function enableDebugging(float $startTime): void
     {
         $this->startTime = $startTime;
     }
 
     /**
-     * @inheritDoc
+     * Use custom Select component or fallback to Symfony ChoiceQuestion.
      */
-    public function isInteractive()
+    public function select(string $question, array $choices, $default, $attempts = false, string $errorMessage = 'Value "%s" is invalid', bool $multiselect = false): mixed
     {
-        return $this->input->isInteractive();
+        if ($this->isInteractive() && !$multiselect) {
+            return (new CustomSelect($question, $choices))->run();
+        }
+
+        // Fallback to Symfony ChoiceQuestion for multiselect or non-interactive
+        $q = new ChoiceQuestion($question, $choices, $default);
+        $q->setMultiselect($multiselect);
+        $q->setErrorMessage($errorMessage);
+        if ($attempts !== false) {
+            $q->setMaxAttempts((int)$attempts);
+        }
+
+        return $this->getQuestionHelper()->ask($this->input, $this->getErrorOutput(), $q);
     }
 
-    /**
-     * @inheritDoc
-     */
-    public function isDecorated()
-    {
-        return $this->output->isDecorated();
-    }
+    /* =========================================================
+       WRITING LOGIC
+    ========================================================= */
 
-    /**
-     * @inheritDoc
-     */
-    public function isVerbose()
+    public function write($messages, bool $newline = true, int $verbosity = self::NORMAL): void
     {
-        return $this->output->isVerbose();
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function isVeryVerbose()
-    {
-        return $this->output->isVeryVerbose();
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function isDebug()
-    {
-        return $this->output->isDebug();
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function write($messages, bool $newline = true, int $verbosity = self::NORMAL)
-    {
-        $messages = self::sanitize($messages);
-
         $this->doWrite($messages, $newline, false, $verbosity);
     }
 
-    /**
-     * @inheritDoc
-     */
-    public function writeError($messages, bool $newline = true, int $verbosity = self::NORMAL)
+    public function writeError($messages, bool $newline = true, int $verbosity = self::NORMAL): void
     {
-        $messages = self::sanitize($messages);
-
         $this->doWrite($messages, $newline, true, $verbosity);
     }
 
-    /**
-     * @inheritDoc
-     */
-    public function writeRaw($messages, bool $newline = true, int $verbosity = self::NORMAL)
-    {
-        $this->doWrite($messages, $newline, false, $verbosity, true);
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function writeErrorRaw($messages, bool $newline = true, int $verbosity = self::NORMAL)
-    {
-        $this->doWrite($messages, $newline, true, $verbosity, true);
-    }
-
-    /**
-     * @param string[]|string $messages
-     */
     private function doWrite($messages, bool $newline, bool $stderr, int $verbosity, bool $raw = false): void
     {
-        $sfVerbosity = $this->verbosityMap[$verbosity];
+        $sfVerbosity = $this->verbosityMap[$verbosity] ?? OutputInterface::VERBOSITY_NORMAL;
         if ($sfVerbosity > $this->output->getVerbosity()) {
             return;
         }
 
-        if ($raw) {
-            $sfVerbosity |= OutputInterface::OUTPUT_RAW;
+        $messages = (array) $messages;
+
+        if ($this->startTime !== null) {
+            $mem = round(memory_get_usage() / 1024 / 1024, 1);
+            $time = round(microtime(true) - $this->startTime, 2);
+            $prefix = Colors::muted("[{$mem}MiB/{$time}s] ");
+            $messages = array_map(fn($m) => $prefix . $m, $messages);
         }
 
-        if (null !== $this->startTime) {
-            $memoryUsage = memory_get_usage() / 1024 / 1024;
-            $timeSpent = microtime(true) - $this->startTime;
-            $messages = array_map(static function ($message) use ($memoryUsage, $timeSpent): string {
-                return sprintf('[%.1fMiB/%.2fs] %s', $memoryUsage, $timeSpent, $message);
-            }, (array) $messages);
-        }
-
-        if (true === $stderr && $this->output instanceof ConsoleOutputInterface) {
-            $this->output->getErrorOutput()->write($messages, $newline, $sfVerbosity);
-            $this->lastMessageErr = implode($newline ? "\n" : '', (array) $messages);
-
-            return;
-        }
-
-        $this->output->write($messages, $newline, $sfVerbosity);
-        $this->lastMessage = implode($newline ? "\n" : '', (array) $messages);
+        $target = $stderr ? $this->getErrorOutput() : $this->output;
+        $target->write($messages, $newline, $raw ? OutputInterface::OUTPUT_RAW : $sfVerbosity);
+        
+        $log = implode($newline ? PHP_EOL : '', $messages);
+        if ($stderr) $this->lastMessageErr = $log; else $this->lastMessage = $log;
     }
 
-    /**
-     * @inheritDoc
-     */
-    public function overwrite($messages, bool $newline = true, ?int $size = null, int $verbosity = self::NORMAL)
+    /* =========================================================
+       OVERWRITE LOGIC (ANSI Optimized)
+    ========================================================= */
+
+    public function overwrite($messages, bool $newline = true, ?int $size = null, int $verbosity = self::NORMAL): void
     {
         $this->doOverwrite($messages, $newline, $size, false, $verbosity);
     }
 
-    /**
-     * @inheritDoc
-     */
-    public function overwriteError($messages, bool $newline = true, ?int $size = null, int $verbosity = self::NORMAL)
+    public function overwriteError($messages, bool $newline = true, ?int $size = null, int $verbosity = self::NORMAL): void
     {
         $this->doOverwrite($messages, $newline, $size, true, $verbosity);
     }
 
-    /**
-     * @param string[]|string $messages
-     */
     private function doOverwrite($messages, bool $newline, ?int $size, bool $stderr, int $verbosity): void
     {
-        // messages can be an array, let's convert it to string anyway
-        $messages = implode($newline ? "\n" : '', (array) $messages);
-
-        // since overwrite is supposed to overwrite last message...
-        if (!isset($size)) {
-            // removing possible formatting of lastMessage with strip_tags
-            $size = strlen(strip_tags($stderr ? $this->lastMessageErr : $this->lastMessage));
-        }
-        // ...let's fill its length with backspaces
-        $this->doWrite(str_repeat("\x08", $size), false, $stderr, $verbosity);
-
-        // write the new message
-        $this->doWrite($messages, false, $stderr, $verbosity);
-
-        // In cmd.exe on Win8.1 (possibly 10?), the line can not be cleared, so we need to
-        // track the length of previous output and fill it with spaces to make sure the line is cleared.
-        // See https://github.com/composer/composer/pull/5836 for more details
-        $fill = $size - strlen(strip_tags($messages));
-        if ($fill > 0) {
-            // whitespace whatever has left
-            $this->doWrite(str_repeat(' ', $fill), false, $stderr, $verbosity);
-            // move the cursor back
-            $this->doWrite(str_repeat("\x08", $fill), false, $stderr, $verbosity);
-        }
-
-        if ($newline) {
-            $this->doWrite('', true, $stderr, $verbosity);
-        }
-
-        if ($stderr) {
-            $this->lastMessageErr = $messages;
-        } else {
-            $this->lastMessage = $messages;
-        }
+        $target = $stderr ? $this->getErrorOutput() : $this->output;
+        
+        // ANSI: Carriage return (\r) + Clear from cursor to end of line (\033[K)
+        // We write this directly to the stream so BufferIO can capture it.
+        $target->write("\r\033[K", false, OutputInterface::OUTPUT_RAW);
+        
+        $this->doWrite($messages, $newline, $stderr, $verbosity);
     }
 
-    /**
-     * @return ProgressBar
-     */
-    public function getProgressBar(int $max = 0)
+    /* =========================================================
+       QUESTION HELPERS
+    ========================================================= */
+
+    public function ask(string $question, $default = null): mixed
     {
-        return new ProgressBar($this->getErrorOutput(), $max);
+        return $this->getQuestionHelper()->ask($this->input, $this->output, new Question($question, $default));
     }
 
-    /**
-     * @inheritDoc
-     */
-    public function ask($question, $default = null)
+    public function askConfirmation(string $question, bool $default = true): bool
     {
-        /** @var \Symfony\Component\Console\Helper\QuestionHelper $helper */
+        return (bool) $this->getQuestionHelper()->ask($this->input, $this->output, new ConfirmationQuestion($question, $default));
+    }
+
+    public function askAndValidate(string $question, callable $validator, ?int $attempts = null, $default = null): mixed
+    {
+        $q = new Question($question, $default);
+        $q->setValidator($validator);
+        if ($attempts !== null) $q->setMaxAttempts($attempts);
+
+        return $this->getQuestionHelper()->ask($this->input, $this->output, $q);
+    }
+
+    public function askAndHideAnswer(string $question): ?string
+    {
+        $q = new Question($question);
+        $q->setHidden(true);
+        return $this->getQuestionHelper()->ask($this->input, $this->output, $q);
+    }
+
+    /* =========================================================
+       UTILITIES
+    ========================================================= */
+
+    private function getQuestionHelper(): QuestionHelper
+    {
         $helper = $this->helperSet->get('question');
-        $question = new Question(self::sanitize($question), is_string($default) ? self::sanitize($default) : $default);
-
-        return $helper->ask($this->input, $this->getErrorOutput(), $question);
+        if (!$helper instanceof QuestionHelper) {
+            throw new \RuntimeException('The Symfony QuestionHelper is missing from HelperSet.');
+        }
+        return $helper;
     }
 
-    /**
-     * @inheritDoc
-     */
-    public function askConfirmation($question, $default = true)
+    public function getErrorOutput(): OutputInterface
     {
-        /** @var \Symfony\Component\Console\Helper\QuestionHelper $helper */
-        $helper = $this->helperSet->get('question');
-        $question = new StrictConfirmationQuestion(self::sanitize($question), is_string($default) ? self::sanitize($default) : $default);
-
-        return $helper->ask($this->input, $this->getErrorOutput(), $question);
+        return ($this->output instanceof ConsoleOutputInterface) ? $this->output->getErrorOutput() : $this->output;
     }
 
-    /**
-     * @inheritDoc
-     */
-    public function askAndValidate($question, $validator, $attempts = null, $default = null)
+    public function isInteractive(): bool
     {
-        /** @var \Symfony\Component\Console\Helper\QuestionHelper $helper */
-        $helper = $this->helperSet->get('question');
-        $question = new Question(self::sanitize($question), is_string($default) ? self::sanitize($default) : $default);
-        $question->setValidator($validator);
-        $question->setMaxAttempts($attempts);
-
-        return $helper->ask($this->input, $this->getErrorOutput(), $question);
+        return $this->input->isInteractive();
     }
 
-    /**
-     * @inheritDoc
-     */
-    public function askAndHideAnswer($question)
+    public function isVerbose(): bool
     {
-        /** @var \Symfony\Component\Console\Helper\QuestionHelper $helper */
-        $helper = $this->helperSet->get('question');
-        $question = new Question(self::sanitize($question));
-        $question->setHidden(true);
-
-        return $helper->ask($this->input, $this->getErrorOutput(), $question);
+        return $this->output->getVerbosity() >= OutputInterface::VERBOSITY_VERBOSE;
     }
 
-    /**
-     * @inheritDoc
-     */
-    public function select($question, $choices, $default, $attempts = false, $errorMessage = 'Value "%s" is invalid', $multiselect = false)
+    public function isVeryVerbose(): bool
     {
-        /** @var \Symfony\Component\Console\Helper\QuestionHelper $helper */
-        $helper = $this->helperSet->get('question');
-        $question = new ChoiceQuestion(self::sanitize($question), self::sanitize($choices), is_string($default) ? self::sanitize($default) : $default);
-        $question->setMaxAttempts($attempts ?: null); // IOInterface requires false, and Question requires null or int
-        $question->setErrorMessage($errorMessage);
-        $question->setMultiselect($multiselect);
-
-        $result = $helper->ask($this->input, $this->getErrorOutput(), $question);
-
-        $isAssoc = (bool) \count(array_filter(array_keys($choices), 'is_string'));
-        if ($isAssoc) {
-            return $result;
-        }
-
-        if (!is_array($result)) {
-            return (string) array_search($result, $choices, true);
-        }
-
-        $results = [];
-        foreach ($choices as $index => $choice) {
-            if (in_array($choice, $result, true)) {
-                $results[] = (string) $index;
-            }
-        }
-
-        return $results;
+        return $this->output->getVerbosity() >= OutputInterface::VERBOSITY_VERY_VERBOSE;
     }
 
-    public function getTable(): Table
+    public function isDebug(): bool
     {
-        return new Table($this->output);
+        return $this->output->getVerbosity() >= OutputInterface::VERBOSITY_DEBUG;
     }
 
-    private function getErrorOutput(): OutputInterface
+    public function isDecorated(): bool
     {
-        if ($this->output instanceof ConsoleOutputInterface) {
-            return $this->output->getErrorOutput();
-        }
-
-        return $this->output;
-    }
-
-    /**
-     * Sanitize string to remove control characters
-     *
-     * If $allowNewlines is true, \x0A (\n) and \x0D\x0A (\r\n) are let through. Single \r are still sanitized away to prevent overwriting whole lines.
-     *
-     * All other control chars (except NULL bytes) as well as ANSI escape sequences are removed.
-     *
-     * Invalid unicode sequences are turned into question marks.
-     *
-     * @param string|iterable<string> $messages
-     * @return string|array<string>
-     * @phpstan-return ($messages is string ? string : array<string>)
-     */
-    public static function sanitize($messages, bool $allowNewlines = true)
-    {
-        // Match ANSI escape sequences:
-        // - CSI (Control Sequence Introducer): ESC [ params intermediate final
-        // - OSC (Operating System Command): ESC ] ... ESC \ or BEL
-        // - Other ESC sequences: ESC followed by any character
-        $escapePattern = '\x1B\[[\x30-\x3F]*[\x20-\x2F]*[\x40-\x7E]|\x1B\].*?(?:\x1B\\\\|\x07)|\x1B.';
-        $pattern = $allowNewlines ? "{{$escapePattern}|[\x01-\x09\x0B\x0C\x0E-\x1A]|\r(?!\n)}u" : "{{$escapePattern}|[\x01-\x1A]}u";
-        if (is_string($messages)) {
-            $messages = self::ensureValidUtf8($messages);
-
-            return Preg::replace($pattern, '', $messages);
-        }
-
-        $sanitized = [];
-        foreach ($messages as $key => $message) {
-            $message = self::ensureValidUtf8($message);
-            $sanitized[$key] = Preg::replace($pattern, '', $message);
-        }
-
-        return $sanitized;
-    }
-
-    /**
-     * Ensures a string is valid UTF-8, replacing invalid byte sequences with '?'
-     */
-    private static function ensureValidUtf8(string $string): string
-    {
-        // Quick check: if string is already valid UTF-8, return as-is
-        if (function_exists('mb_check_encoding') && mb_check_encoding($string, 'UTF-8')) {
-            return $string;
-        }
-
-        // Use mb_convert_encoding to replace invalid sequences with '?'
-        // This makes it visible when data quality issues occur
-        if (function_exists('mb_convert_encoding')) {
-            return (string) mb_convert_encoding($string, 'UTF-8', 'UTF-8');
-        }
-
-        // Fallback to iconv if mbstring unavailable
-        if (function_exists('iconv')) {
-            $cleaned = @iconv('UTF-8', 'UTF-8//TRANSLIT', $string);
-            if ($cleaned !== false) {
-                return $cleaned;
-            }
-        }
-
-        // Last resort: return as-is (should never happen - Composer requires mbstring OR iconv)
-        return $string;
+        return $this->output->isDecorated();
     }
 }
