@@ -4,8 +4,9 @@ declare(strict_types=1);
 namespace AlfacodeTeam\PhpIoCli;
 
 use AlfacodeTeam\PhpIoCli\Depends\Key;
+use AlfacodeTeam\PhpIoCli\Depends\Colors;
 use AlfacodeTeam\PhpIoCli\Depends\Terminal;
-use AlfacodeTeam\PhpIoCli\Depends\RenderContext; // Assuming this is used now
+use AlfacodeTeam\PhpIoCli\Depends\RenderContext;
 use Exception;
 
 abstract class AbstractPrompt implements IPromptComponent, ILifecycle
@@ -19,9 +20,10 @@ abstract class AbstractPrompt implements IPromptComponent, ILifecycle
         $this->context = new RenderContext();
     }
 
-    /**
-     * The Engine Loop
-     */
+    /* =========================================================
+       ENGINE LOOP
+    ========================================================= */
+
     public function run(): mixed
     {
         Terminal::enableRaw();
@@ -32,17 +34,19 @@ abstract class AbstractPrompt implements IPromptComponent, ILifecycle
             $this->dispatch('mount');
 
             while ($this->running) {
-                // Only render if the state has actually changed
                 if ($this->context->dirty) {
+                    // Give subclasses (or an injected IRenderer) a chance to
+                    // run beforeRender / afterRender hooks around render().
+                    $this->beforeRenderHook();
                     $this->render();
+                    $this->afterRenderHook();
                     $this->context->clear();
                     $this->dispatch('render');
                 }
 
                 $rawKey = Terminal::readKey();
-                $key = Key::normalize($rawKey);
+                $key    = Key::normalize($rawKey);
 
-                // Handle Global Exit (Ctrl+C)
                 if ($key === 'CTRL_C') {
                     $this->handleCancel();
                     break;
@@ -67,16 +71,37 @@ abstract class AbstractPrompt implements IPromptComponent, ILifecycle
         }
     }
 
+    /* =========================================================
+       RENDER LIFECYCLE HOOKS
+       Concrete subclasses may override these to delegate to an
+       IRenderer without breaking the base run() contract.
+    ========================================================= */
+
+    /**
+     * Called immediately before render() in the engine loop.
+     * Override to invoke IRenderer::beforeRender() when using a renderer object.
+     */
+    protected function beforeRenderHook(): void {}
+
+    /**
+     * Called immediately after render() in the engine loop.
+     * Override to invoke IRenderer::afterRender() when using a renderer object.
+     */
+    protected function afterRenderHook(): void {}
+
+    /* =========================================================
+       HELPERS
+    ========================================================= */
+
     protected function handleCancel(): void
     {
         $this->stop();
-        echo PHP_EOL . "  " . \AlfacodeTeam\PhpIoCli\Depends\Colors::error("Cancelled.") . PHP_EOL;
+        echo PHP_EOL . '  ' . Colors::error('Cancelled.') . PHP_EOL;
     }
 
     protected function handleError(Exception $e): void
     {
-        // Ensure we are on a new line before the error prints
-        echo PHP_EOL;
+        echo PHP_EOL . '  ' . Colors::error('An error occurred.') . PHP_EOL;
     }
 
     protected function dispatch(string $event, mixed $payload = null): void
@@ -89,7 +114,10 @@ abstract class AbstractPrompt implements IPromptComponent, ILifecycle
         $this->running = false;
     }
 
-    /* --- Abstract Methods --- */
+    /* =========================================================
+       ABSTRACT CONTRACT
+    ========================================================= */
+
     abstract protected function resolve(): mixed;
     abstract public function mount(): void;
     abstract public function render(): void;

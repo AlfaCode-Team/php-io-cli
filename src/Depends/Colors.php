@@ -19,27 +19,27 @@ final class Colors
             return self::$enabled;
         }
 
-        // 1. Check for NO_COLOR environment variable (Standard)
+        // 1. NO_COLOR standard (https://no-color.org)
         if (getenv('NO_COLOR') !== false) {
             return self::$enabled = false;
         }
 
-        // 2. Check for FORCE_COLOR
+        // 2. FORCE_COLOR override
         if (getenv('FORCE_COLOR') !== false) {
             return self::$enabled = true;
         }
 
-        // 3. Check for Windows VT100 support
+        // 3. Windows VT100
         if (PHP_OS_FAMILY === 'Windows') {
-            return self::$enabled = function_exists('sapi_windows_vt100_support') 
+            return self::$enabled = function_exists('sapi_windows_vt100_support')
                 && @sapi_windows_vt100_support(STDOUT);
         }
 
-        // 4. Check if we are in a TTY (terminal) or being piped
+        // 4. Unix TTY
         return self::$enabled = function_exists('posix_isatty') && @posix_isatty(STDOUT);
     }
 
-    public static function enable(): void { self::$enabled = true; }
+    public static function enable(): void  { self::$enabled = true; }
     public static function disable(): void { self::$enabled = false; }
 
     /* --- Constants --- */
@@ -49,7 +49,6 @@ final class Colors
     public const ITALIC    = "\033[3m";
     public const UNDERLINE = "\033[4m";
 
-    // Standard 16-color palette
     public const RED     = "\033[31m";
     public const GREEN   = "\033[32m";
     public const YELLOW  = "\033[33m";
@@ -58,7 +57,7 @@ final class Colors
     public const CYAN    = "\033[36m";
     public const GRAY    = "\033[90m";
 
-    /* --- Methods --- */
+    /* --- Core --- */
 
     public static function wrap(string $text, string|array $styles): string
     {
@@ -71,7 +70,7 @@ final class Colors
     }
 
     /**
-     * Hex to ANSI TrueColor
+     * Hex to ANSI TrueColor.
      * Usage: Colors::hex('#ff5733', 'Alert!')
      */
     public static function hex(string $hex, string $text = ''): string
@@ -80,10 +79,12 @@ final class Colors
         if (strlen($hex) === 3) {
             $hex = $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];
         }
-        
-        [$r, $g, $b] = sscanf($hex, "%02x%02x%02x");
+
+        /** @var array{int,int,int} $rgb */
+        $rgb = sscanf($hex, '%02x%02x%02x');
+        [$r, $g, $b] = $rgb;
         $code = "\033[38;2;{$r};{$g};{$b}m";
-        
+
         return $text ? self::wrap($text, $code) : $code;
     }
 
@@ -92,7 +93,7 @@ final class Colors
         echo self::wrap($text, $styles) . PHP_EOL;
     }
 
-    /* --- Theme Methods (Improved) --- */
+    /* --- Theme --- */
 
     public static function success(string $text): string
     {
@@ -101,16 +102,8 @@ final class Colors
 
     public static function error(string $text): string
     {
-        // Adding a prefix like [ERROR] or a cross makes it accessible for color-blind users
         return self::wrap(" ✘ {$text} ", [self::RED, self::BOLD]);
     }
-
-    public static function strip(string $text): string
-    {
-        return preg_replace('/\033\[[0-9;]*m/', '', $text);
-    }
-     /* --- Theme Methods (Synchronized with BaseIO) --- */
-
 
     public static function warning(string $text): string
     {
@@ -127,4 +120,19 @@ final class Colors
         return self::wrap($text, self::GRAY);
     }
 
+    /**
+     * Strip ALL ANSI/VT100 control sequences from a string, including:
+     *   - SGR color/style codes  \033[0m  \033[1;32m  etc.
+     *   - Cursor/erase sequences \033[2K  \033[3A     etc.
+     *   - Bare carriage returns  \r
+     *
+     * Previously only SGR sequences were matched, which left \033[2K and \r
+     * artefacts in BufferIO::getOutput() test snapshots.
+     */
+    public static function strip(string $text): string
+    {
+        // \033[ … <any letter>  covers every CSI sequence (SGR, erase, cursor moves …)
+        // \r                   covers bare carriage returns emitted by Renderer::display()
+        return (string) preg_replace('/\033\[[0-9;]*[A-Za-z]|\r/', '', $text);
+    }
 }

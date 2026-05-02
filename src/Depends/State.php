@@ -6,7 +6,7 @@ namespace AlfacodeTeam\PhpIoCli\Depends;
 use Closure;
 
 /**
- * Reactive State Container
+ * Reactive State Container.
  * Handles data storage, property watching, and CLI-specific state mutations.
  */
 final class State
@@ -22,7 +22,7 @@ final class State
         $this->data = $initialData;
     }
 
-    /* --- Magic Access (Better DX) --- */
+    /* --- Magic Access --- */
 
     public function __get(string $key): mixed
     {
@@ -55,11 +55,22 @@ final class State
         return $this;
     }
 
-    /* --- CLI Navigation Helpers (New!) --- */
-
     /**
-     * Increment a numeric value (e.g., selection index) with a ceiling.
+     * Set multiple keys at once without triggering intermediate renders.
+     *
+     * @param array<string, mixed> $values
      */
+    public function batch(array $values): self
+    {
+        foreach ($values as $key => $value) {
+            $this->set($key, $value);
+        }
+
+        return $this;
+    }
+
+    /* --- CLI Navigation Helpers --- */
+
     public function increment(string $key, int $max): void
     {
         $current = (int) $this->get($key, 0);
@@ -68,9 +79,6 @@ final class State
         }
     }
 
-    /**
-     * Decrement a numeric value with a floor of 0.
-     */
     public function decrement(string $key): void
     {
         $current = (int) $this->get($key, 0);
@@ -85,7 +93,7 @@ final class State
     public function toggle(string $key, mixed $value): void
     {
         $current = (array) $this->get($key, []);
-        $index = array_search($value, $current, true);
+        $index   = array_search($value, $current, true);
 
         if ($index === false) {
             $current[] = $value;
