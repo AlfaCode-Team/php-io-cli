@@ -7,54 +7,75 @@ use AlfacodeTeam\PhpIoCli\AbstractPrompt;
 use AlfacodeTeam\PhpIoCli\Hooks;
 use AlfacodeTeam\PhpIoCli\Depends\State;
 use AlfacodeTeam\PhpIoCli\Depends\Input;
+use AlfacodeTeam\PhpIoCli\Depends\Renderer;
 
 abstract class Component extends AbstractPrompt
 {
     protected State $state;
     protected Input $input;
+    protected Renderer $renderer;
 
-    /**
-     * Pass hooks to the parent and ensure state is ready.
-     */
     public function __construct(?Hooks $hooks = null)
     {
         parent::__construct($hooks ?? new Hooks());
-        $this->state = new State();
-        $this->input = new Input();
+        $this->state    = new State();
+        $this->input    = new Input();
+        $this->renderer = new Renderer();
     }
 
+    /* =========================================================
+       LIFECYCLE
+    ========================================================= */
+
     /**
-     * Standardizes the boot process for all prompts.
+     * Sealed: delegates to setup() so subclasses can't accidentally
+     * break the boot sequence.
      */
-    public final function mount(): void
+    final public function mount(): void
     {
-        // Setup is the "User Land" hook for subclasses
         $this->setup();
     }
 
     /**
-     * Concrete prompts will define their logic here.
+     * Wire IRenderer::beforeRender() into AbstractPrompt's engine loop.
+     */
+    protected function beforeRenderHook(): void
+    {
+        $this->renderer->beforeRender($this->state, $this->context);
+    }
+
+    /**
+     * Wire IRenderer::afterRender() into AbstractPrompt's engine loop.
+     */
+    protected function afterRenderHook(): void
+    {
+        $this->renderer->afterRender($this->state, $this->context);
+    }
+
+    /**
+     * Proxies the key update to the Input dispatcher, then marks the UI dirty.
+     */
+    public function update(string $key): void
+    {
+        $this->input->handle($key, $this->state);
+        $this->context->markDirty();
+    }
+
+    public function destroy(): void
+    {
+        echo "\r\033[2K";
+    }
+
+    /* =========================================================
+       ABSTRACT HOOKS FOR SUBCLASSES
+    ========================================================= */
+
+    /**
+     * Subclasses wire their State + Input bindings here.
      */
     abstract protected function setup(): void;
 
     abstract public function render(): void;
 
-    /**
-     * Proxies the key update to the Input handler.
-     */
-    public function update(string $key): void
-    {
-        $this->input->handle($key, $this->state);
-        
-        // Every keypress marks the UI as dirty by default to trigger a re-render
-        $this->context->markDirty();
-    }
-
     abstract public function resolve(): mixed;
-
-    public function destroy(): void 
-    {
-        // Default: clear line on exit to leave a clean terminal
-        echo "\r\033[2K";
-    }
 }

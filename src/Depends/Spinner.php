@@ -13,7 +13,7 @@ final class Spinner
     private string $currentFrame = '';
 
     public function __construct(
-        array $frames = null,
+        ?array $frames = null,
         float $interval = 0.1
     ) {
         $this->frames = $frames ?? SpinnerFrames::default();
@@ -34,7 +34,7 @@ final class Spinner
 
     /**
      * Updates the internal state and returns the current frame.
-     * This version does NOT echo, allowing the Renderer to handle layout.
+     * Does NOT echo — the Renderer owns all terminal output.
      */
     public function tick(): string
     {

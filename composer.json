@@ -1,14 +1,20 @@
 {
   "name": "alfacode-team/php-io-cli",
-  "description": "Auto-generated module",
+  "description": "Interactive CLI component runtime for PHP microservice and hexagonal architectures.",
   "type": "library",
+  "license": "MIT",
   "autoload": {
     "psr-4": {
       "AlfacodeTeam\\PhpIoCli\\": "src/"
     }
   },
   "require": {
-    "php": "^8.2"
+    "php": "^8.2",
+    "psr/log": "^3.0"
+  },
+  "require-dev": {
+    "phpstan/phpstan": "^1.10",
+    "symfony/console": "^6.0 || ^7.0"
   },
   "minimum-stability": "dev",
   "prefer-stable": true
