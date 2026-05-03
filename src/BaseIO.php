@@ -4,19 +4,17 @@ declare(strict_types=1);
 namespace AlfacodeTeam\PhpIoCli;
 
 use AlfacodeTeam\PhpIoCli\Depends\Colors;
+use AlfacodeTeam\PhpIoCli\Silencer;           // ← THE FIX: was only in a docblock before, never imported
 use Psr\Log\LogLevel;
 use Stringable;
 
 /**
  * Enterprise Base IO.
  * Bridges PSR-3 Logging with ANSI CLI Output.
- *
- * Fix applied: added missing `use AlfacodeTeam\PhpIoCli\Silencer` import.
- * Previously the call to Silencer::call() in log() would throw a fatal because
- * PHP resolved the unqualified class name against the current namespace.
  */
 abstract class BaseIO implements IOInterface
 {
+
     public function writeRaw($messages, bool $newline = true, int $verbosity = self::NORMAL): void
     {
         $this->write($messages, $newline, $verbosity);
@@ -66,8 +64,7 @@ abstract class BaseIO implements IOInterface
         $output = (string) $message;
 
         if ($context !== []) {
-            // Silencer is in the root namespace of this library — the missing
-            // `use` statement was the bug; now it is explicitly imported above.
+            // Silencer is now properly imported — this call will resolve correctly.
             $json = Silencer::call(static fn () => json_encode(
                 $context,
                 JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_IGNORE

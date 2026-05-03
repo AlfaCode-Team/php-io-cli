@@ -17,5 +17,21 @@
     "symfony/console": "^6.0 || ^7.0"
   },
   "minimum-stability": "dev",
-  "prefer-stable": true
+  "prefer-stable": true,
+  "extra": {
+    "_comment": "── php-io-cli: command auto-discovery ──────────────────────────────────────",
+    "_comment2": "Applications that depend on this library should add their own 'extra.php-io-cli'",
+    "_comment3": "block in THEIR composer.json (not this file). Example:",
+    "_example": {
+      "extra": {
+        "php-io-cli": {
+          "commands": [
+            "App\\Commands\\ServeCommand",
+            "App\\Commands\\MakeModelCommand",
+            "App\\Commands\\MigrateCommand"
+          ]
+        }
+      }
+    }
+  }
 }

@@ -4,7 +4,12 @@ declare(strict_types=1);
 namespace AlfacodeTeam\PhpIoCli;
 
 use AlfacodeTeam\PhpIoCli\Depends\Colors;
+use AlfacodeTeam\PhpIoCli\Components\Autocomplete;
+use AlfacodeTeam\PhpIoCli\Components\Confirm;
+use AlfacodeTeam\PhpIoCli\Components\MultiSelect;
+use AlfacodeTeam\PhpIoCli\Components\Password;
 use AlfacodeTeam\PhpIoCli\Components\Select as CustomSelect;
+use AlfacodeTeam\PhpIoCli\Components\TextInput;
 use Symfony\Component\Console\Helper\HelperSet;
 use Symfony\Component\Console\Helper\QuestionHelper;
 use Symfony\Component\Console\Input\InputInterface;
@@ -15,13 +20,20 @@ use Symfony\Component\Console\Question\ConfirmationQuestion;
 use Symfony\Component\Console\Question\Question;
 
 /**
- * Enterprise bridge between Symfony Console and Alfacode components.
+ * Enterprise bridge between Symfony Console and Alfacode reactive components.
+ *
+ * Strategy
+ * ─────────
+ * Every interactive method first checks isStdinTty(). When the process is
+ * attached to a real terminal it delegates to the reactive component (raw-mode,
+ * ANSI-animated). When running non-interactively (piped input, CI, test harness)
+ * it falls back to the plain Symfony QuestionHelper so nothing breaks.
  */
 class ConsoleIO extends BaseIO
 {
     protected string $lastMessage    = '';
     protected string $lastMessageErr = '';
-    private ?float $startTime        = null;
+    private ?float   $startTime      = null;
 
     private array $verbosityMap = [
         self::QUIET        => OutputInterface::VERBOSITY_QUIET,
@@ -32,9 +44,9 @@ class ConsoleIO extends BaseIO
     ];
 
     public function __construct(
-        protected InputInterface $input,
+        protected InputInterface  $input,
         protected OutputInterface $output,
-        protected HelperSet $helperSet
+        protected HelperSet       $helperSet
     ) {}
 
     public function enableDebugging(float $startTime): void
@@ -43,27 +55,174 @@ class ConsoleIO extends BaseIO
     }
 
     /* =========================================================
-       INTERACTIVE SELECT
+       TTY detection
     ========================================================= */
 
     /**
-     * Uses the custom reactive Select component when possible.
+     * Returns true only when STDIN is a real TTY.
+     * Prevents Terminal::enableRaw() from conflicting with piped/memory streams.
+     */
+    private function isStdinTty(): bool
+    {
+        return $this->isInteractive()
+            && function_exists('posix_isatty')
+            && @posix_isatty(STDIN);
+    }
+
+    /* =========================================================
+       INTERACTIVE — ask (plain text)
+    ========================================================= */
+
+    /**
+     * Asks a free-text question.
      *
-     * Raw-mode conflict fix: we only hand off to CustomSelect when the
-     * current process is actually attached to a TTY. When Symfony has
-     * already opened STDIN as a stream (piped input, test harness) we
-     * fall back to ChoiceQuestion to avoid corrupting the input stream.
+     * On a real TTY: uses the reactive TextInput component (inline validation,
+     * virtual caret, placeholder support).
+     * Otherwise: falls back to Symfony QuestionHelper.
+     */
+    public function ask(string $question, mixed $default = null): mixed
+    {
+        if ($this->isStdinTty()) {
+            $input = new TextInput($question);
+
+            if ($default !== null) {
+                $input->default((string) $default);
+            }
+
+            return $input->run();
+        }
+
+        return $this->getQuestionHelper()->ask(
+            $this->input,
+            $this->output,
+            new Question($question, $default)
+        );
+    }
+
+    /* =========================================================
+       INTERACTIVE — confirmation (yes/no)
+    ========================================================= */
+
+    /**
+     * Asks a yes/no question.
+     *
+     * On a real TTY: uses the reactive Confirm component (toggle with ← →,
+     * coloured button highlight).
+     * Otherwise: falls back to Symfony ConfirmationQuestion.
+     */
+    public function askConfirmation(string $question, bool $default = true): bool
+    {
+        if ($this->isStdinTty()) {
+            return (bool) (new Confirm($question, $default))->run();
+        }
+
+        return (bool) $this->getQuestionHelper()->ask(
+            $this->input,
+            $this->output,
+            new ConfirmationQuestion($question, $default)
+        );
+    }
+
+    /* =========================================================
+       INTERACTIVE — ask with inline validation
+    ========================================================= */
+
+    /**
+     * Asks a question and re-prompts until the validator passes.
+     *
+     * On a real TTY: uses TextInput with an inline validator that renders
+     * the error message below the input without clearing the screen.
+     * Otherwise: falls back to Symfony Question::setValidator().
+     */
+    public function askAndValidate(
+        string   $question,
+        callable $validator,
+        ?int     $attempts = null,
+        mixed    $default  = null
+    ): mixed {
+        if ($this->isStdinTty()) {
+            $input = (new TextInput($question))
+                ->validate(function (string $value) use ($validator): ?string {
+                    try {
+                        $validator($value);
+                        return null;          // null = no error, validation passed
+                    } catch (\Throwable $e) {
+                        return $e->getMessage();
+                    }
+                });
+
+            if ($default !== null) {
+                $input->default((string) $default);
+            }
+
+            return $input->run();
+        }
+
+        $q = new Question($question, $default);
+        $q->setValidator($validator);
+
+        if ($attempts !== null) {
+            $q->setMaxAttempts($attempts);
+        }
+
+        return $this->getQuestionHelper()->ask($this->input, $this->output, $q);
+    }
+
+    /* =========================================================
+       INTERACTIVE — hidden answer (password)
+    ========================================================= */
+
+    /**
+     * Asks a question whose answer is masked.
+     *
+     * On a real TTY: uses the reactive Password component (● masking,
+     * TAB to toggle visibility, live strength meter).
+     * Otherwise: falls back to Symfony Question::setHidden().
+     */
+    public function askAndHideAnswer(string $question): ?string
+    {
+        if ($this->isStdinTty()) {
+            return (string) (new Password($question))->showStrength()->run();
+        }
+
+        $q = new Question($question);
+        $q->setHidden(true);
+
+        return $this->getQuestionHelper()->ask($this->input, $this->output, $q);
+    }
+
+    /* =========================================================
+       INTERACTIVE — select (single / multi)
+    ========================================================= */
+
+    /**
+     * Presents a list of choices.
+     *
+     * On a real TTY (single-select): uses the reactive Select component
+     * (fuzzy search, scroll windowing, animated highlight).
+     *
+     * On a real TTY (multi-select): uses the reactive MultiSelect component
+     * (spacebar toggle, checkbox display).
+     *
+     * Otherwise: falls back to Symfony ChoiceQuestion.
+     *
+     * @param string[] $choices
+     * @phpstan-return ($multiselect is true ? list<string> : string|int|bool)
      */
     public function select(
-        string $question,
-        array $choices,
-        mixed $default,
-        bool|int $attempts = false,
-        string $errorMessage = 'Value "%s" is invalid',
-        bool $multiselect = false
+        string     $question,
+        array      $choices,
+        mixed      $default,
+        bool|int   $attempts     = false,
+        string     $errorMessage = 'Value "%s" is invalid',
+        bool       $multiselect  = false
     ): int|string|array|bool {
-        if ($this->isInteractive() && !$multiselect && $this->isStdinTty()) {
-            return (new CustomSelect($question, $choices))->run();
+        if ($this->isStdinTty()) {
+            if ($multiselect) {
+                return (array) (new MultiSelect($question, $choices))->run();
+            }
+
+            return (string) (new CustomSelect($question, $choices))->run();
         }
 
         $q = new ChoiceQuestion($question, $choices, $default);
@@ -75,15 +234,6 @@ class ConsoleIO extends BaseIO
         }
 
         return $this->getQuestionHelper()->ask($this->input, $this->getErrorOutput(), $q);
-    }
-
-    /**
-     * Returns true when STDIN is a real TTY, not a pipe or memory stream.
-     * Prevents Terminal::enableRaw() from conflicting with Symfony's input stream.
-     */
-    private function isStdinTty(): bool
-    {
-        return function_exists('posix_isatty') && @posix_isatty(STDIN);
     }
 
     /* =========================================================
@@ -100,12 +250,22 @@ class ConsoleIO extends BaseIO
         $this->doWrite($messages, $newline, true, $verbosity);
     }
 
+    public function writeRaw($messages, bool $newline = true, int $verbosity = self::NORMAL): void
+    {
+        $this->doWrite($messages, $newline, false, $verbosity, raw: true);
+    }
+
+    public function writeErrorRaw($messages, bool $newline = true, int $verbosity = self::NORMAL): void
+    {
+        $this->doWrite($messages, $newline, true, $verbosity, raw: true);
+    }
+
     private function doWrite(
-        mixed $messages,
-        bool $newline,
-        bool $stderr,
-        int $verbosity,
-        bool $raw = false
+        mixed  $messages,
+        bool   $newline,
+        bool   $stderr,
+        int    $verbosity,
+        bool   $raw = false
     ): void {
         $sfVerbosity = $this->verbosityMap[$verbosity] ?? OutputInterface::VERBOSITY_NORMAL;
 
@@ -148,53 +308,15 @@ class ConsoleIO extends BaseIO
     }
 
     private function doOverwrite(
-        mixed $messages,
-        bool $newline,
-        ?int $size,
-        bool $stderr,
-        int $verbosity
+        mixed  $messages,
+        bool   $newline,
+        ?int   $size,
+        bool   $stderr,
+        int    $verbosity
     ): void {
         $target = $stderr ? $this->getErrorOutput() : $this->output;
         $target->write("\r\033[K", false, OutputInterface::OUTPUT_RAW);
         $this->doWrite($messages, $newline, $stderr, $verbosity);
-    }
-
-    /* =========================================================
-       QUESTION HELPERS
-    ========================================================= */
-
-    public function ask(string $question, mixed $default = null): mixed
-    {
-        return $this->getQuestionHelper()->ask($this->input, $this->output, new Question($question, $default));
-    }
-
-    public function askConfirmation(string $question, bool $default = true): bool
-    {
-        return (bool) $this->getQuestionHelper()->ask(
-            $this->input,
-            $this->output,
-            new ConfirmationQuestion($question, $default)
-        );
-    }
-
-    public function askAndValidate(string $question, callable $validator, ?int $attempts = null, mixed $default = null): mixed
-    {
-        $q = new Question($question, $default);
-        $q->setValidator($validator);
-
-        if ($attempts !== null) {
-            $q->setMaxAttempts($attempts);
-        }
-
-        return $this->getQuestionHelper()->ask($this->input, $this->output, $q);
-    }
-
-    public function askAndHideAnswer(string $question): ?string
-    {
-        $q = new Question($question);
-        $q->setHidden(true);
-
-        return $this->getQuestionHelper()->ask($this->input, $this->output, $q);
     }
 
     /* =========================================================
