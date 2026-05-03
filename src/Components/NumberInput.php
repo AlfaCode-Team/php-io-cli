@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace AlfacodeTeam\PhpIoCli\Components;
@@ -29,11 +30,31 @@ final class NumberInput extends Component
     }
 
     /* --- Fluent --- */
-    public function min(float $v): self    { $this->min = $v; return $this; }
-    public function max(float $v): self    { $this->max = $v; return $this; }
-    public function step(float $v): self   { $this->step = $v; return $this; }
-    public function default(float $v): self{ $this->default = $v; return $this; }
-    public function integer(): self        { $this->intOnly = true; return $this; }
+    public function min(float $v): self
+    {
+        $this->min = $v;
+        return $this;
+    }
+    public function max(float $v): self
+    {
+        $this->max = $v;
+        return $this;
+    }
+    public function step(float $v): self
+    {
+        $this->step = $v;
+        return $this;
+    }
+    public function default(float $v): self
+    {
+        $this->default = $v;
+        return $this;
+    }
+    public function integer(): self
+    {
+        $this->intOnly = true;
+        return $this;
+    }
 
     /* =========================================================
        LIFECYCLE
@@ -42,45 +63,51 @@ final class NumberInput extends Component
     protected function setup(): void
     {
         $this->state->batch([
-            'raw'   => $this->default !== null ? (string)$this->default : '',
+            'raw'   => $this->default !== null ? (string) $this->default : '',
             'error' => null,
             'done'  => false,
         ]);
 
         // Typing digits, minus, dot
-        $this->input->fallback(function ($s, $key) {
-            if (!Key::isPrintable($key)) return;
+        $this->input->fallback(function ($s, $key): void {
+            if (!Key::isPrintable($key)) {
+                return;
+            }
             $allowed = $this->intOnly ? '0123456789-' : '0123456789.-';
             if (mb_strpos($allowed, $key) !== false) {
-                $s->raw   = (string)$s->raw . $key;
+                $s->raw   = (string) $s->raw . $key;
                 $s->error = null;
             }
         });
 
-        $this->input->bind('BACKSPACE', function ($s) {
-            $s->raw   = mb_substr((string)$s->raw, 0, -1);
+        $this->input->bind('BACKSPACE', function ($s): void {
+            $s->raw   = mb_substr((string) $s->raw, 0, -1);
             $s->error = null;
         });
 
         // Arrow stepping
-        $this->input->bind('UP', function ($s) {
-            $current = (float)((string)$s->raw ?: '0');
+        $this->input->bind('UP', function ($s): void {
+            $current = (float) ((string) $s->raw ?: '0');
             $new     = $current + $this->step;
-            if ($this->max !== null) $new = min($new, $this->max);
+            if ($this->max !== null) {
+                $new = min($new, $this->max);
+            }
             $s->raw  = $this->format($new);
         });
 
-        $this->input->bind('DOWN', function ($s) {
-            $current = (float)((string)$s->raw ?: '0');
+        $this->input->bind('DOWN', function ($s): void {
+            $current = (float) ((string) $s->raw ?: '0');
             $new     = $current - $this->step;
-            if ($this->min !== null) $new = max($new, $this->min);
+            if ($this->min !== null) {
+                $new = max($new, $this->min);
+            }
             $s->raw  = $this->format($new);
         });
 
-        $this->input->bind('ENTER', function ($s) {
-            $raw = trim((string)$s->raw);
+        $this->input->bind('ENTER', function ($s): void {
+            $raw = trim((string) $s->raw);
             if ($raw === '' && $this->default !== null) {
-                $raw = (string)$this->default;
+                $raw = (string) $this->default;
             }
 
             if ($raw === '') {
@@ -93,7 +120,7 @@ final class NumberInput extends Component
                 return;
             }
 
-            $val = (float)$raw;
+            $val = (float) $raw;
 
             if ($this->min !== null && $val < $this->min) {
                 $s->error = "Minimum value is {$this->min}.";
@@ -113,7 +140,7 @@ final class NumberInput extends Component
 
     private function format(float $v): string
     {
-        return $this->intOnly ? (string)(int)$v : rtrim(rtrim(number_format($v, 10, '.', ''), '0'), '.');
+        return $this->intOnly ? (string) (int) $v : rtrim(rtrim(number_format($v, 10, '.', ''), '0'), '.');
     }
 
     /* =========================================================
@@ -128,9 +155,9 @@ final class NumberInput extends Component
 
         Terminal::hideCursor();
 
-        $raw   = (string)$this->state->raw;
+        $raw   = (string) $this->state->raw;
         $error = $this->state->error;
-        $done  = (bool)$this->state->done;
+        $done  = (bool) $this->state->done;
         $lines = [];
 
         $mark    = $done ? Colors::success('') : Colors::wrap('? ', Colors::CYAN);
@@ -178,7 +205,7 @@ final class NumberInput extends Component
 
     public function resolve(): mixed
     {
-        $v = (float)$this->state->raw;
-        return $this->intOnly ? (int)$v : $v;
+        $v = (float) $this->state->raw;
+        return $this->intOnly ? (int) $v : $v;
     }
 }

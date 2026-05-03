@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace AlfacodeTeam\PhpIoCli\Components;
@@ -8,7 +9,7 @@ use AlfacodeTeam\PhpIoCli\Depends\Colors;
 /**
  * Enterprise Styled Tables
  * Handles ANSI-aware widths and Unicode formatting.
- * 
+ *
  * Renders styled Unicode tables to the terminal.
  *
  * Usage:
@@ -30,15 +31,38 @@ final class Table
 
     private function __construct() {}
 
-    public static function make(): self { return new self(); }
+    public static function make(): self
+    {
+        return new self();
+    }
 
-    public function headers(array $headers): self { $this->headers = $headers; return $this; }
-    public function rows(array $rows): self { $this->rows = $rows; return $this; }
-    public function style(string $style): self { $this->style = $style; return $this; }
-    public function striped(bool $enable = true): self { $this->striped = $enable; return $this; }
+    public function headers(array $headers): self
+    {
+        $this->headers = $headers;
+        return $this;
+    }
+    public function rows(array $rows): self
+    {
+        $this->rows = $rows;
+        return $this;
+    }
+    public function style(string $style): self
+    {
+        $this->style = $style;
+        return $this;
+    }
+    public function striped(bool $enable = true): self
+    {
+        $this->striped = $enable;
+        return $this;
+    }
 
     /** @param array<int, string> $alignments ['left', 'center', 'right'] */
-    public function align(array $alignments): self { $this->alignments = $alignments; return $this; }
+    public function align(array $alignments): self
+    {
+        $this->alignments = $alignments;
+        return $this;
+    }
 
     public function render(): void
     {
@@ -89,7 +113,7 @@ final class Table
     }
 
     /**
-     * Fixes the "ANSI Headache": 
+     * Fixes the "ANSI Headache":
      * Uses Colors::strip() to calculate the VISUAL width of the content.
      */
     private function computeWidths(int $count): array
@@ -100,7 +124,7 @@ final class Table
         foreach ($allData as $row) {
             foreach ($row as $i => $cell) {
                 // We strip ANSI before measuring length
-                $visualLength = mb_strlen(Colors::strip((string)$cell));
+                $visualLength = mb_strlen(Colors::strip((string) $cell));
                 $widths[$i] = max($widths[$i], $visualLength);
             }
         }
@@ -111,9 +135,9 @@ final class Table
     {
         $parts = [];
         foreach ($widths as $i => $width) {
-            $rawContent = (string)($cells[$i] ?? '');
+            $rawContent = (string) ($cells[$i] ?? '');
             $align = $this->alignments[$i] ?? 'left';
-            
+
             $padded = $this->applyPadding($rawContent, $width, $align);
 
             // Styling logic
@@ -139,7 +163,7 @@ final class Table
 
         return match ($align) {
             'right'  => str_repeat(' ', $diff) . $text,
-            'center' => str_repeat(' ', (int)floor($diff / 2)) . $text . str_repeat(' ', (int)ceil($diff / 2)),
+            'center' => str_repeat(' ', (int) floor($diff / 2)) . $text . str_repeat(' ', (int) ceil($diff / 2)),
             default  => $text . str_repeat(' ', $diff),
         };
     }

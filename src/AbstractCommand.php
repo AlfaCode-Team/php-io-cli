@@ -1,16 +1,24 @@
 <?php
+
 declare(strict_types=1);
 
 namespace AlfacodeTeam\PhpIoCli;
 
 use AlfacodeTeam\PhpIoCli\Components\Alert;
+use AlfacodeTeam\PhpIoCli\Components\Autocomplete;
 use AlfacodeTeam\PhpIoCli\Components\Confirm;
+use AlfacodeTeam\PhpIoCli\Components\DatePicker;
+use AlfacodeTeam\PhpIoCli\Components\MultiSelect;
+use AlfacodeTeam\PhpIoCli\Components\NumberInput;
+use AlfacodeTeam\PhpIoCli\Components\Password;
 use AlfacodeTeam\PhpIoCli\Components\ProgressBar;
 use AlfacodeTeam\PhpIoCli\Components\Select;
 use AlfacodeTeam\PhpIoCli\Components\SpinnerComponent;
 use AlfacodeTeam\PhpIoCli\Components\Table;
 use AlfacodeTeam\PhpIoCli\Components\TextInput;
 use AlfacodeTeam\PhpIoCli\Depends\Colors;
+use AlfacodeTeam\PhpIoCli\Depends\Terminal;
+use DateTimeImmutable;
 use LogicException;
 use Throwable;
 
@@ -33,8 +41,11 @@ abstract class AbstractCommand
 
     private array $arguments = [];
     private array $options = [];
-    private array $rawTokens = [];
+
+    // FIX 1: $rawTokens was assigned in execute() but never read anywhere — removed.
+
     private IOInterface $io;
+    private bool $rethrowExceptions = false;
 
     final public function __construct()
     {
@@ -54,12 +65,16 @@ abstract class AbstractCommand
     final public function execute(array $tokens, IOInterface $io): int
     {
         $this->io = $io;
-        $this->rawTokens = $tokens;
         $this->parseTokens($tokens);
 
-        // Validate required arguments
+        // FIX 2: The old condition was:
+        //   !isset($this->arguments[$argName]) || $this->arguments[$argName] === null
+        // isset() already returns false for null-valued keys, so after !isset() is false
+        // (i.e. the key IS set and IS NOT null), the === null comparison is always false.
+        // PHPStan level 8 correctly flags it. Fix: use only !isset(), which covers both
+        // "key absent" and "key set to null".
         foreach ($this->argumentDefs as $argName => $def) {
-            if ($def['required'] && (!isset($this->arguments[$argName]) || $this->arguments[$argName] === null)) {
+            if ($def['required'] && !isset($this->arguments[$argName])) {
                 $this->error("Missing required argument: <{$argName}>");
                 return self::INVALID;
             }
@@ -68,12 +83,28 @@ abstract class AbstractCommand
         try {
             return $this->handle();
         } catch (Throwable $e) {
+            // If catch-exceptions mode is enabled (via marker), rethrow
+            if ($this->rethrowExceptions) {
+                throw $e;
+            }
+
             $this->io->error("Command Error: " . $e->getMessage());
             if ($io->isDebug()) {
                 $this->io->write(Colors::muted($e->getTraceAsString()));
             }
             return self::FAILURE;
         }
+    }
+
+    /**
+     * Set whether exceptions should be rethrown instead of caught.
+     * Called by CLIApplication when catchExceptions(false).
+     *
+     * @internal For use by CLIApplication only.
+     */
+    final public function setRethrowExceptions(bool $rethrow): void
+    {
+        $this->rethrowExceptions = $rethrow;
     }
 
     /* =========================================================
@@ -105,10 +136,12 @@ abstract class AbstractCommand
     private function parseTokens(array $tokens): void
     {
         // Set Defaults
-        foreach ($this->argumentDefs as $name => $def)
+        foreach ($this->argumentDefs as $name => $def) {
             $this->arguments[$name] = $def['default'];
-        foreach ($this->optionDefs as $key => $def)
+        }
+        foreach ($this->optionDefs as $key => $def) {
             $this->options[$key] = $def['default'];
+        }
 
         $positional = [];
         $count = count($tokens);
@@ -124,7 +157,6 @@ abstract class AbstractCommand
                     $this->options[$key] = $value;
                 } else {
                     $this->options[$bare] = true;
-                    // Check if next token is a value
                     if (($this->optionDefs[$bare]['acceptsValue'] ?? false) && isset($tokens[$i + 1]) && !str_starts_with($tokens[$i + 1], '-')) {
                         $this->options[$bare] = $tokens[++$i];
                     }
@@ -155,8 +187,9 @@ abstract class AbstractCommand
 
         $argNames = array_keys($this->argumentDefs);
         foreach ($positional as $idx => $value) {
-            if (isset($argNames[$idx]))
+            if (isset($argNames[$idx])) {
                 $this->arguments[$argNames[$idx]] = $value;
+            }
         }
     }
 
@@ -206,7 +239,6 @@ abstract class AbstractCommand
             $this->io->write('');
         }
     }
-
     protected function section(string $title): void
     {
         $this->newLine();
@@ -303,13 +335,10 @@ abstract class AbstractCommand
     {
         return $this->name;
     }
-
     final public function getDescription(): string
     {
         return $this->description;
     }
-
-    // FIX: was missing — called by CLIApplication::all() to filter hidden commands
     final public function isHidden(): bool
     {
         return $this->hidden;

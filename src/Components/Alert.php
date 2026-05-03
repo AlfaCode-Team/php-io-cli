@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace AlfacodeTeam\PhpIoCli\Components;
@@ -22,22 +23,22 @@ final class Alert
 
     public static function success(string $title, string|array $body = []): void
     {
-        self::render($title, (array)$body, '✔', Colors::GREEN);
+        self::render($title, (array) $body, '✔', Colors::GREEN);
     }
 
     public static function error(string $title, string|array $body = []): void
     {
-        self::render($title, (array)$body, '✘', Colors::RED);
+        self::render($title, (array) $body, '✘', Colors::RED);
     }
 
     public static function warning(string $title, string|array $body = []): void
     {
-        self::render($title, (array)$body, '!', Colors::YELLOW);
+        self::render($title, (array) $body, '!', Colors::YELLOW);
     }
 
     public static function info(string $title, string|array $body = []): void
     {
-        self::render($title, (array)$body, 'i', Colors::CYAN);
+        self::render($title, (array) $body, 'i', Colors::CYAN);
     }
 
     /**
@@ -45,13 +46,13 @@ final class Alert
      */
     public static function block(string $title, string|array $body = [], string $color = Colors::RED): void
     {
-        $body = (array)$body;
+        $body = (array) $body;
         $visualWidth = self::calculateMaxWidth($title, $body) + 4;
 
         echo PHP_EOL;
         // Top Padding
         echo Colors::wrap(str_repeat(' ', $visualWidth), $color . '48') . PHP_EOL; // 48 = BG
-        
+
         // Title Line
         $titleLine = "  " . strtoupper($title);
         echo Colors::wrap(self::padVisual($titleLine, $visualWidth), [Colors::BOLD, $color . '48', Colors::WHITE]) . PHP_EOL;
@@ -99,7 +100,7 @@ final class Alert
     {
         $max = mb_strlen(Colors::strip($title));
         foreach ($body as $line) {
-            $max = max($max, mb_strlen(Colors::strip((string)$line)));
+            $max = max($max, mb_strlen(Colors::strip((string) $line)));
         }
         return $max;
     }

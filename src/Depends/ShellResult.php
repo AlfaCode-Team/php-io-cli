@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace AlfacodeTeam\PhpIoCli\Depends;
@@ -15,8 +16,14 @@ final class ShellResult
         public readonly array $stderr,
     ) {}
 
-    public function ok(): bool      { return $this->exitCode === 0; }
-    public function failed(): bool  { return $this->exitCode !== 0; }
+    public function ok(): bool
+    {
+        return $this->exitCode === 0;
+    }
+    public function failed(): bool
+    {
+        return $this->exitCode !== 0;
+    }
 
     /** All stdout lines joined with newlines. */
     public function output(): string
@@ -40,7 +47,7 @@ final class ShellResult
     {
         return array_values(array_filter(
             $this->stderr,
-            fn (string $l) => trim($l) !== ''
+            fn(string $l) => trim($l) !== ''
         ));
     }
 }

@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace AlfacodeTeam\PhpIoCli\Depends;
@@ -56,7 +57,13 @@ final class Key
      */
     public static function isPrintable(string $key): bool
     {
-        // If it starts with an Escape character or is a control char, it's not printable.
-        return mb_strlen($key) === 1 && ord($key) >= 32;
+        // Control characters are < 32, or 127 (DEL)
+        // Printable ASCII is 32-126
+        if (mb_strlen($key) !== 1) {
+            return false;
+        }
+
+        $ord = ord($key);
+        return $ord >= 32 && $ord < 127;
     }
 }

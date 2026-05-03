@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace AlfacodeTeam\PhpIoCli\Components;
@@ -40,22 +41,22 @@ final class Password extends Component
         ]);
 
         // Capture characters
-        $this->input->fallback(function ($state, $key) {
+        $this->input->fallback(function ($state, $key): void {
             if (Key::isPrintable($key)) {
                 $state->value .= $key;
             }
         });
 
-        $this->input->bind('BACKSPACE', function ($state) {
+        $this->input->bind('BACKSPACE', function ($state): void {
             $state->value = mb_substr((string) $state->value, 0, -1);
         });
 
         // TAB toggles visibility
-        $this->input->bind('TAB', function ($state) {
+        $this->input->bind('TAB', function ($state): void {
             $state->visible = !(bool) $state->visible;
         });
 
-        $this->input->bind('ENTER', function ($state) {
+        $this->input->bind('ENTER', function ($state): void {
             $state->done = true;
             $this->stop();
         });
@@ -97,7 +98,7 @@ final class Password extends Component
             if ($this->strengthMeter && $len > 0) {
                 $lines[] = '    ' . $this->buildStrengthBar($value);
             } else {
-                $lines[] = ''; 
+                $lines[] = '';
             }
 
             // Help Hint
@@ -140,19 +141,29 @@ final class Password extends Component
     {
         $score = 0;
         $len   = mb_strlen($password);
-        
-        if ($len >= 8)                      $score++;
-        if ($len >= 12)                     $score++;
-        if (preg_match('/[A-Z]/', $password))               $score++;
-        if (preg_match('/[0-9]/', $password))               $score++;
-        if (preg_match('/[^A-Za-z0-9]/', $password))        $score++;
+
+        if ($len >= 8) {
+            $score++;
+        }
+        if ($len >= 12) {
+            $score++;
+        }
+        if (preg_match('/[A-Z]/', $password)) {
+            $score++;
+        }
+        if (preg_match('/[0-9]/', $password)) {
+            $score++;
+        }
+        if (preg_match('/[^A-Za-z0-9]/', $password)) {
+            $score++;
+        }
 
         $labels = ['Very weak', 'Weak', 'Fair', 'Good', 'Strong'];
         $colors = [Colors::RED, Colors::RED, Colors::YELLOW, Colors::GREEN, Colors::GREEN];
 
         // Ensure we don't index out of bounds
         $index = max(0, min($score - 1, 4));
-        
+
         $filled = str_repeat('━', $score);
         $empty  = str_repeat('━', 5 - $score);
         $label  = $labels[$index];

@@ -1,25 +1,53 @@
-# CakePHP 3
+# ── COMPOSER ──────────────────────────────────────────────────
+/vendor/
+#(Uncomment if you want to ignore lock file for the library)
+composer.lock 
 
-/vendor/*
-/config/app.php
 
-/tmp/cache/models/*
-!/tmp/cache/models/empty
-/tmp/cache/persistent/*
-!/tmp/cache/persistent/empty
-/tmp/cache/views/*
-!/tmp/cache/views/empty
-/tmp/sessions/*
-!/tmp/sessions/empty
-/tmp/tests/*
-!/tmp/tests/empty
+# ── TESTING & COVERAGE ────────────────────────────────────────
+/.phpunit.cache/
+.phpunit.result.cache
+/coverage/
+/coverage-html/
+coverage.xml
+clover.xml
+phpunit.xml
+!phpunit.xml.dist
+infection.log
 
-/logs/*
-!/logs/empty
+# ── STATIC ANALYSIS & REFACTORING CACHES ──────────────────────
+.php-cs-fixer.cache
+/.phpstan.cache/
+/.rector/
+phpstan-results.json
 
-# CakePHP 2
+# ── PROFILING & DEBUGGING (Xdebug) ────────────────────────────
+cachegrind.out.*
+xdebug.log
+error_log
+php_errors.log
 
-/app/tmp/*
-/app/Config/core.php
-/app/Config/database.php
-/vendors/*
+# ── BUILD ARTIFACTS (If you compile the CLI) ──────────────────
+/build/
+/dist/
+*.phar
+
+# ── ENVIRONMENT & DOCKER ──────────────────────────────────────
+.env
+.env.*.local
+docker-compose.override.yml
+docker-compose.local.yml
+
+# ── OS & IDEs ─────────────────────────────────────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+Thumbs.db
+ehthumbs.db
+/.idea/
+/.vscode/
+*.swp
+*.swo
+*~

@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace AlfacodeTeam\PhpIoCli;
@@ -142,7 +143,7 @@ final class CLIApplication
         $cmds = $this->commands;
 
         if (!$includeHidden) {
-            $cmds = array_filter($cmds, fn ($c) => !$c->isHidden());
+            $cmds = array_filter($cmds, fn($c) => !$c->isHidden());
         }
 
         ksort($cmds);
@@ -256,7 +257,9 @@ final class CLIApplication
             }
 
             $parent = dirname($dir);
-            if ($parent === $dir) break; // filesystem root
+            if ($parent === $dir) {
+                break;
+            } // filesystem root
             $dir = $parent;
         }
 
@@ -276,7 +279,7 @@ final class CLIApplication
      */
     public function run(?array $argv = null): int
     {
-        $argv  = $argv ?? array_slice($_SERVER['argv'] ?? [], 1);
+        $argv ??= array_slice($_SERVER['argv'] ?? [], 1);
         $token = $argv[0] ?? '';
         $rest  = array_slice($argv, 1);
 
@@ -320,12 +323,14 @@ final class CLIApplication
     {
         // --help / -h attached to a known command
         if (
-            $token !== '' &&
-            $this->has($token) &&
-            (in_array('--help', $rest, true) || in_array('-h', $rest, true))
+            $token !== ''
+            && $this->has($token)
+            && (in_array('--help', $rest, true) || in_array('-h', $rest, true))
         ) {
-            $this->commands[$token]->execute([], $this->io());
-            $this->commands[$token]->printHelp();
+            $cmd = $this->commands[$token];
+            $cmd->setRethrowExceptions(!$this->catchExceptions);
+            $cmd->execute([], $this->io());
+            $cmd->printHelp();
             return AbstractCommand::SUCCESS;
         }
 
@@ -346,7 +351,9 @@ final class CLIApplication
 
         // Exact match
         if ($this->has($token)) {
-            return $this->commands[$token]->execute($rest, $this->io());
+            $cmd = $this->commands[$token];
+            $cmd->setRethrowExceptions(!$this->catchExceptions);
+            return $cmd->execute($rest, $this->io());
         }
 
         // ── Not found — fuzzy suggestions ─────────────────────
@@ -360,7 +367,9 @@ final class CLIApplication
                 $this->io()->write(Colors::muted('  Did you mean one of these?') . PHP_EOL);
                 $pick = (new CustomSelect('Run instead?', $suggestions))->run();
                 if (is_string($pick) && $this->has($pick)) {
-                    return $this->commands[$pick]->execute($rest, $this->io());
+                    $cmd = $this->commands[$pick];
+                    $cmd->setRethrowExceptions(!$this->catchExceptions);
+                    return $cmd->execute($rest, $this->io());
                 }
             } else {
                 $this->io()->writeError('');
@@ -398,6 +407,7 @@ final class CLIApplication
         }
 
         $cmd = $this->commands[$commandName];
+        $cmd->setRethrowExceptions(!$this->catchExceptions);
         $cmd->execute([], $this->io());
         $cmd->printHelp();
         return AbstractCommand::SUCCESS;
@@ -432,7 +442,7 @@ final class CLIApplication
             }
 
             // Align descriptions by padding command names to same width
-            $maxLen = max(array_map(fn ($n) => mb_strlen($n), array_keys($cmds)));
+            $maxLen = max(array_map(fn($n) => mb_strlen($n), array_keys($cmds)));
 
             foreach ($cmds as $name => $cmd) {
                 $this->io()->write(sprintf(

@@ -1,0 +1,22 @@
+# Set default behavior
+* text=auto
+
+# Enforce LF endings for scripts and configs (Crucial for CLI tools running on Linux/Docker)
+*.php text eol=lf
+*.json text eol=lf
+*.yml text eol=lf
+*.xml text eol=lf
+*.sh text eol=lf
+
+# ── EXPORT IGNORE (Keeps production installations tiny) ───────
+/tests/             export-ignore
+/.github/           export-ignore
+/.idea/             export-ignore
+/.vscode/           export-ignore
+/phpunit.xml.dist   export-ignore
+/phpstan.neon       export-ignore
+/rector.php         export-ignore
+/.php-cs-fixer.php  export-ignore
+/infection.json5    export-ignore
+/.gitignore         export-ignore
+/.editorconfig      export-ignore

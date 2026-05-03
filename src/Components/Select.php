@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace AlfacodeTeam\PhpIoCli\Components;
@@ -10,7 +11,7 @@ use AlfacodeTeam\PhpIoCli\Depends\Terminal;
 
 /**
  * Interactive search selection component.
- * 
+ *
  * Usage:
  * // $color = (new Select('Choose a color', ['Red', 'Blue', 'Green']))->run();
  */
@@ -40,23 +41,23 @@ final class Select extends Component
         ]);
 
         // Navigation
-        $this->input->bind('UP', function ($state) {
+        $this->input->bind('UP', function ($state): void {
             $state->decrement('index');
         });
 
-        $this->input->bind('DOWN', function ($state) {
+        $this->input->bind('DOWN', function ($state): void {
             $count = count($this->getFiltered());
             $state->increment('index', $count > 0 ? $count - 1 : 0);
         });
 
         // Search logic
-        $this->input->bind('BACKSPACE', function ($state) {
-            $state->search = mb_substr((string)$state->search, 0, -1);
+        $this->input->bind('BACKSPACE', function ($state): void {
+            $state->search = mb_substr((string) $state->search, 0, -1);
             $state->index = 0;
         });
 
         // Selection
-        $this->input->bind('ENTER', function ($state) {
+        $this->input->bind('ENTER', function ($state): void {
             $filtered = $this->getFiltered();
             if (empty($filtered)) {
                 return;
@@ -67,7 +68,7 @@ final class Select extends Component
         });
 
         // Typing fallback
-        $this->input->fallback(function ($state, $key) {
+        $this->input->fallback(function ($state, $key): void {
             if (Key::isPrintable($key)) {
                 $state->search .= $key;
                 $state->index = 0; // Reset index on new search
@@ -99,10 +100,10 @@ final class Select extends Component
         if (!$done) {
             // Search Bar Line
             $searchLabel = Colors::wrap('› ', Colors::GRAY);
-            $searchText  = $search !== '' 
-                ? Colors::wrap($search, Colors::YELLOW) . Colors::wrap('▊', Colors::CYAN) 
+            $searchText  = $search !== ''
+                ? Colors::wrap($search, Colors::YELLOW) . Colors::wrap('▊', Colors::CYAN)
                 : Colors::wrap('Type to filter...', Colors::DIM);
-            
+
             $lines[] = "  {$searchLabel}{$searchText}";
             $lines[] = ""; // Spacer
 
@@ -114,7 +115,7 @@ final class Select extends Component
                 $windowSize = 8;
                 $total = count($filtered);
                 $start = (int) max(0, min($this->state->index - floor($windowSize / 2), $total - $windowSize));
-                
+
                 foreach (array_slice($filtered, $start, $windowSize) as $i => $item) {
                     $realIndex = $start + $i;
                     $active = $realIndex === $this->state->index;
@@ -125,19 +126,19 @@ final class Select extends Component
                         $lines[] = Colors::wrap("    {$item}", Colors::GRAY);
                     }
                 }
-                
+
                 // Scroll indicators for large lists
                 if ($total > $windowSize) {
                     $lines[] = Colors::muted(sprintf("    (Showing %d of %d)", $windowSize, $total));
                 }
             }
-            
+
             $lines[] = "";
             $lines[] = Colors::muted("    ↑↓ navigate  •  ENTER select  •  Type to filter");
 
         } else {
             // Collapse UI on finish
-            $lines[] = Colors::wrap('  › ', Colors::GRAY) . Colors::wrap((string)$this->state->result, Colors::GREEN);
+            $lines[] = Colors::wrap('  › ', Colors::GRAY) . Colors::wrap((string) $this->state->result, Colors::GREEN);
         }
 
         // 3. Clear and print
@@ -166,6 +167,6 @@ final class Select extends Component
 
     private function getFiltered(): array
     {
-        return Fuzzy::filter($this->choices, (string)$this->state->search);
+        return Fuzzy::filter($this->choices, (string) $this->state->search);
     }
 }

@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace AlfacodeTeam\PhpIoCli\Components;
@@ -45,7 +46,9 @@ final class SpinnerComponent
      */
     public function tick(string $subLabel = ''): void
     {
-        if (!$this->running) return;
+        if (!$this->running) {
+            return;
+        }
         $this->draw($subLabel);
     }
 

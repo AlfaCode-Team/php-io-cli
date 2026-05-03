@@ -1,10 +1,12 @@
 <?php
+
 declare(strict_types=1);
 
 namespace AlfacodeTeam\PhpIoCli\Components;
 
 use AlfacodeTeam\PhpIoCli\Depends\Colors;
 use AlfacodeTeam\PhpIoCli\Depends\Key;
+use AlfacodeTeam\PhpIoCli\Depends\State;
 use AlfacodeTeam\PhpIoCli\Depends\Terminal;
 
 /**
@@ -52,47 +54,55 @@ final class TextInput extends Component
     protected function setup(): void
     {
         $this->state->batch([
-            'value'    => '',
-            'cursor'   => 0,
-            'done'     => false,
-            'error'    => null,
+            'value' => '',
+            'cursor' => 0,
+            'done' => false,
+            'error' => null,
         ]);
 
         // Key: Typing
-        $this->input->fallback(function ($state, $key) {
+        $this->input->fallback(function (State|string $state, string $key): void {
             if (Key::isPrintable($key)) {
-                $cur   = (int) $state->cursor;
+                $cur = (int) $state->cursor;
                 $value = (string) $state->value;
-                $state->value  = mb_substr($value, 0, $cur) . $key . mb_substr($value, $cur);
+                $state->value = mb_substr($value, 0, $cur) . $key . mb_substr($value, $cur);
                 $state->cursor = $cur + 1;
-                $state->error  = null;
+                $state->error = null;
             }
         });
 
         // Key: Navigation
-        $this->input->bind('LEFT', fn($s) => $s->decrement('cursor'));
-        $this->input->bind('RIGHT', fn($s) => $s->increment('cursor', mb_strlen((string) $s->value)));
-        $this->input->bind('HOME', fn($s) => $s->cursor = 0);
-        $this->input->bind('END', fn($s) => $s->cursor = mb_strlen((string) $s->value));
-
-        // Key: Deletion
-        $this->input->bind('BACKSPACE', function ($state) {
-            $cur = (int) $state->cursor;
-            if ($cur === 0) return;
-            $state->value  = mb_substr((string)$state->value, 0, $cur - 1) . mb_substr((string)$state->value, $cur);
-            $state->cursor = $cur - 1;
-            $state->error  = null;
+        $this->input->bind('LEFT', fn(State|string $s) => $s->decrement('cursor'));
+        $this->input->bind('RIGHT', fn(State|string $s) => $s->increment('cursor', mb_strlen((string) $s->value)));
+        $this->input->bind('HOME', function (State|string $s): void {
+            $s->cursor = 0;
+        });
+        $this->input->bind('END', function (State|string $s): void {
+            $s->cursor = mb_strlen((string) $s->value);
         });
 
-        $this->input->bind('DELETE', function ($state) {
-            $cur   = (int) $state->cursor;
+        // Key: Deletion
+        $this->input->bind('BACKSPACE', function (State|string $state): void {
+            $cur = (int) $state->cursor;
+            if ($cur === 0) {
+                return;
+            }
+            $state->value = mb_substr((string) $state->value, 0, $cur - 1) . mb_substr((string) $state->value, $cur);
+            $state->cursor = $cur - 1;
+            $state->error = null;
+        });
+
+        $this->input->bind('DELETE', function (State|string $state): void {
+            $cur = (int) $state->cursor;
             $value = (string) $state->value;
-            if ($cur >= mb_strlen($value)) return;
+            if ($cur >= mb_strlen($value)) {
+                return;
+            }
             $state->value = mb_substr($value, 0, $cur) . mb_substr($value, $cur + 1);
         });
 
         // Key: Submission
-        $this->input->bind('ENTER', function ($state) {
+        $this->input->bind('ENTER', function (State|string $state): void {
             $value = (string) $state->value;
 
             if ($value === '' && $this->defaultValue !== '') {
@@ -126,10 +136,10 @@ final class TextInput extends Component
 
         Terminal::hideCursor();
 
-        $value  = (string) $this->state->value;
+        $value = (string) $this->state->value;
         $cursor = (int) $this->state->cursor;
-        $error  = $this->state->error;
-        $done   = (bool) $this->state->done;
+        $error = $this->state->error;
+        $done = (bool) $this->state->done;
 
         $lines = [];
 
@@ -140,13 +150,13 @@ final class TextInput extends Component
         if (!$done) {
             // Line 2: Input Area
             $before = mb_substr($value, 0, $cursor);
-            $at     = mb_substr($value, $cursor, 1);
-            $after  = mb_substr($value, $cursor + 1);
-            $char   = ($at !== '') ? $at : ' ';
+            $at = mb_substr($value, $cursor, 1);
+            $after = mb_substr($value, $cursor + 1);
+            $char = ($at !== '') ? $at : ' ';
 
             // Block Cursor using Inverse Video ANSI
             $cursorAnsi = Colors::wrap($char, [Colors::BOLD, "\033[7m"]);
-            
+
             $displayText = Colors::wrap($before, Colors::YELLOW) . $cursorAnsi . Colors::wrap($after, Colors::YELLOW);
 
             // Handle Placeholder

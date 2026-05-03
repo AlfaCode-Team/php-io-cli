@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace AlfacodeTeam\PhpIoCli\Components;
@@ -34,7 +35,11 @@ final class ProgressBar
     }
 
     /* --- Fluent Configuration --- */
-    public function width(int $w): self { $this->width = $w; return $this; }
+    public function width(int $w): self
+    {
+        $this->width = $w;
+        return $this;
+    }
 
     /* =========================================================
        CONTROL
@@ -66,7 +71,9 @@ final class ProgressBar
         if ($this->total > 0) {
             $this->current = min($this->current + $step, $this->total);
         }
-        if ($status !== '') $this->status = $status;
+        if ($status !== '') {
+            $this->status = $status;
+        }
         $this->draw();
     }
 
@@ -74,11 +81,13 @@ final class ProgressBar
     {
         $this->finished = true;
         $this->spinner->stop();
-        
-        if ($this->total > 0) $this->current = $this->total;
+
+        if ($this->total > 0) {
+            $this->current = $this->total;
+        }
 
         $this->draw($message);
-        
+
         Terminal::showCursor();
         echo PHP_EOL;
     }
@@ -112,15 +121,15 @@ final class ProgressBar
             if ($this->total > 0) {
                 // DETERMINATE MODE (Bar + Spinner + Status)
                 $pct = $this->current / $this->total;
-                $pctStr = str_pad((int)($pct * 100) . '%', 4, ' ', STR_PAD_LEFT);
+                $pctStr = str_pad((int) ($pct * 100) . '%', 4, ' ', STR_PAD_LEFT);
 
-                $lines[] = "{$frame} " . Colors::wrap($this->label, Colors::BOLD) 
+                $lines[] = "{$frame} " . Colors::wrap($this->label, Colors::BOLD)
                          . Colors::muted(sprintf(' (%d/%d)', $this->current, $this->total));
-                
+
                 $lines[] = '  ' . $this->buildBar($pct) . ' ' . Colors::wrap($pctStr, Colors::YELLOW);
             } else {
                 // INDETERMINATE MODE (Label + Spinner + Status)
-                $lines[] = "{$frame} " . Colors::wrap($this->label, Colors::BOLD) 
+                $lines[] = "{$frame} " . Colors::wrap($this->label, Colors::BOLD)
                          . Colors::muted(sprintf(' %.1fs', $elapsed));
             }
 

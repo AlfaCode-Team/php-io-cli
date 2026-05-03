@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace AlfacodeTeam\PhpIoCli\Depends;
@@ -15,7 +16,7 @@ final class Input
 
     /**
      * Bind a handler to one or multiple keys.
-     * 
+     *
      * @param string|array<string> $keys
      * @param Closure(State, string): (void|bool) $handler
      */
@@ -30,7 +31,7 @@ final class Input
 
     /**
      * Define what happens if no specific binding matches the key.
-     * 
+     *
      * @param Closure(State, string): void $handler
      */
     public function fallback(Closure $handler): self
@@ -56,7 +57,7 @@ final class Input
     public function handle(string $key, State $state): void
     {
         // 1. Normalization: Map common hex/escape codes to readable strings
-         $normalizedKey = Key::normalize($key);
+        $normalizedKey = Key::normalize($key);
 
         if (isset($this->bindings[$normalizedKey])) {
             foreach ($this->bindings[$normalizedKey] as $handler) {

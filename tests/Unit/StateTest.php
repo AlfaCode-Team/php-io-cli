@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace AlfacodeTeam\PhpIoCli\Tests\Unit;
@@ -162,8 +163,12 @@ final class StateTest extends TestCase
         $state = new State(['x' => 0]);
         $calls = [];
 
-        $state->watch('x', function () use (&$calls): void { $calls[] = 'first'; });
-        $state->watch('x', function () use (&$calls): void { $calls[] = 'second'; });
+        $state->watch('x', function () use (&$calls): void {
+            $calls[] = 'first';
+        });
+        $state->watch('x', function () use (&$calls): void {
+            $calls[] = 'second';
+        });
 
         $state->x = 99;
 

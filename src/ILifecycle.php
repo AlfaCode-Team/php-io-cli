@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace AlfacodeTeam\PhpIoCli;
@@ -21,7 +22,7 @@ interface ILifecycle
 
     /**
      * Triggered whenever a keypress is captured.
-     * 
+     *
      * @param string $key The normalized key name (e.g., 'UP', 'ENTER', 'a')
      */
     public function update(string $key): void;

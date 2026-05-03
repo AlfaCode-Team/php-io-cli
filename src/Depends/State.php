@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace AlfacodeTeam\PhpIoCli\Depends;
@@ -102,6 +103,27 @@ final class State
         }
 
         $this->set($key, array_values($current));
+    }
+
+    /**
+     * Filter items by search query (case-insensitive substring match).
+     * Returns all items if no search query is set.
+     *
+     * @return array<int|string, mixed>
+     */
+    public function filtered(): array
+    {
+        $items = (array) $this->get('items', []);
+        $search = mb_strtolower((string) $this->get('search', ''));
+
+        if ($search === '') {
+            return $items;
+        }
+
+        return array_filter(
+            $items,
+            fn($item) => mb_stripos((string) $item, $search) !== false
+        );
     }
 
     /* --- Reactivity --- */

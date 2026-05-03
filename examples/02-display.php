@@ -1,5 +1,6 @@
 #!/usr/bin/env php
 <?php
+
 /**
  * php-io-cli — Example: Display Components
  *
@@ -45,10 +46,10 @@ Colors::line("  Box style (default):", Colors::BOLD);
 Table::make()
     ->headers(['Service', 'Status', 'Latency', 'Requests'])
     ->rows([
-        ['api-gateway',    Colors::wrap('healthy',  Colors::GREEN),  '12 ms',  '15,204'],
+        ['api-gateway',    Colors::wrap('healthy', Colors::GREEN),  '12 ms',  '15,204'],
         ['auth-service',   Colors::wrap('degraded', Colors::YELLOW), '340 ms', '3,891'],
-        ['payment-worker', Colors::wrap('down',     Colors::RED),    '—',      '0'],
-        ['cache-service',  Colors::wrap('healthy',  Colors::GREEN),  '2 ms',   '52,001'],
+        ['payment-worker', Colors::wrap('down', Colors::RED),    '—',      '0'],
+        ['cache-service',  Colors::wrap('healthy', Colors::GREEN),  '2 ms',   '52,001'],
     ])
     ->align([3 => 'right'])
     ->render();

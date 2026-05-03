@@ -1,5 +1,6 @@
 #!/usr/bin/env php
 <?php
+
 /**
  * php-io-cli — Example: All Interactive Input Components
  *
@@ -27,9 +28,7 @@ Colors::line("\n  php-io-cli — Interactive Components Demo\n", [Colors::BOLD, 
 $name = (new TextInput('What is your name?'))
     ->placeholder('e.g. Alice')
     ->default('World')
-    ->validate(function (string $value): ?string {
-        return mb_strlen($value) >= 2 ? null : 'Name must be at least 2 characters.';
-    })
+    ->validate(fn(string $value): ?string => mb_strlen($value) >= 2 ? null : 'Name must be at least 2 characters.')
     ->run();
 
 Colors::line("  → Name: {$name}", Colors::GREEN);
@@ -52,7 +51,7 @@ $secret = (new Password('Enter a password'))
     ->showStrength()
     ->run();
 
-Colors::line("  → Password length: " . mb_strlen((string)$secret) . " chars", Colors::GREEN);
+Colors::line("  → Password length: " . mb_strlen((string) $secret) . " chars", Colors::GREEN);
 
 // ── 4. Confirm ────────────────────────────────────────────────────
 
