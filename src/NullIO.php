@@ -1,18 +1,13 @@
 <?php
+
 declare(strict_types=1);
 
 namespace AlfacodeTeam\PhpIoCli;
 
 /**
  * A completely silent, non-interactive IO implementation.
- *
  * Every interactive method returns its $default value.
  * Every write method is a no-op.
- *
- * Ideal for:
- *   • CI / automated pipelines (no TTY)
- *   • Unit tests that don't care about output
- *   • Background/daemon processes
  */
 class NullIO extends BaseIO
 {
@@ -20,30 +15,40 @@ class NullIO extends BaseIO
        State
     ========================================================= */
 
-    public function isInteractive(): bool  { return false; }
-    public function isVerbose(): bool      { return false; }
-    public function isVeryVerbose(): bool  { return false; }
-    public function isDebug(): bool        { return false; }
-    public function isDecorated(): bool    { return false; }
+    public function isInteractive(): bool
+    {
+        return false;
+    }
+    public function isVerbose(): bool
+    {
+        return false;
+    }
+    public function isVeryVerbose(): bool
+    {
+        return false;
+    }
+    public function isDebug(): bool
+    {
+        return false;
+    }
+    public function isDecorated(): bool
+    {
+        return false;
+    }
 
     /* =========================================================
        Writing — all no-ops
-       Explicitly overriding every signature here so that NullIO
-       can never accidentally inherit a version that does real I/O.
     ========================================================= */
 
     public function write($messages, bool $newline = true, int $verbosity = self::NORMAL): void {}
 
     public function writeError($messages, bool $newline = true, int $verbosity = self::NORMAL): void {}
 
-    /**
-     * Explicitly overriding writeRaw so it does NOT delegate to write()
-     * via BaseIO (which would also be a no-op here, but the override makes
-     * the intent crystal-clear and avoids any future accidental coupling).
-     */
-    public function writeRaw($messages, bool $newline = true, int $verbosity = self::NORMAL): void {}
+    // FIX: $messages was untyped — PHPStan error. Typed as string|array to match IOInterface.
+    public function writeRaw(string|array $messages, bool $newline = true, int $verbosity = self::NORMAL): void {}
 
-    public function writeErrorRaw($messages, bool $newline = true, int $verbosity = self::NORMAL): void {}
+    // FIX: same as above
+    public function writeErrorRaw(string|array $messages, bool $newline = true, int $verbosity = self::NORMAL): void {}
 
     public function overwrite($messages, bool $newline = true, ?int $size = null, int $verbosity = self::NORMAL): void {}
 

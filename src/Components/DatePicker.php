@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace AlfacodeTeam\PhpIoCli\Components;
@@ -29,33 +30,33 @@ final class DatePicker extends Component
         $now = new DateTimeImmutable();
 
         $this->state->batch([
-            'year'  => (int)$now->format('Y'),
-            'month' => (int)$now->format('n'),
-            'day'   => (int)$now->format('j'),
+            'year'  => (int) $now->format('Y'),
+            'month' => (int) $now->format('n'),
+            'day'   => (int) $now->format('j'),
             'done'  => false,
         ]);
 
         // 1. Precise Day/Week Navigation
-        $this->input->bind('LEFT',  fn($s) => $this->shiftDate($s, '-1 day'));
+        $this->input->bind('LEFT', fn($s) => $this->shiftDate($s, '-1 day'));
         $this->input->bind('RIGHT', fn($s) => $this->shiftDate($s, '+1 day'));
-        $this->input->bind('UP',    fn($s) => $this->shiftDate($s, '-7 days'));
-        $this->input->bind('DOWN',  fn($s) => $this->shiftDate($s, '+7 days'));
+        $this->input->bind('UP', fn($s) => $this->shiftDate($s, '-7 days'));
+        $this->input->bind('DOWN', fn($s) => $this->shiftDate($s, '+7 days'));
 
         // 2. Month Navigation (Mapped to [ and ] or PageUp/Down if your Terminal detects them)
-        $this->input->bind(['[', 'PAGE_UP'],   fn($s) => $this->shiftMonth($s, -1));
+        $this->input->bind(['[', 'PAGE_UP'], fn($s) => $this->shiftMonth($s, -1));
         $this->input->bind([']', 'PAGE_DOWN'], fn($s) => $this->shiftMonth($s, 1));
 
         // 3. Shortcuts
-        $this->input->bind('t', function($s) {
+        $this->input->bind('t', function ($s): void {
             $now = new DateTimeImmutable();
             $s->batch([
-                'year' => (int)$now->format('Y'),
-                'month' => (int)$now->format('n'),
-                'day' => (int)$now->format('j'),
+                'year' => (int) $now->format('Y'),
+                'month' => (int) $now->format('n'),
+                'day' => (int) $now->format('j'),
             ]);
         });
 
-        $this->input->bind('ENTER', function ($s) {
+        $this->input->bind('ENTER', function ($s): void {
             $s->done = true;
             $this->stop();
         });
@@ -65,9 +66,9 @@ final class DatePicker extends Component
     {
         $dt = $this->getSelectedDate()->modify($modify);
         $s->batch([
-            'year'  => (int)$dt->format('Y'),
-            'month' => (int)$dt->format('n'),
-            'day'   => (int)$dt->format('j'),
+            'year'  => (int) $dt->format('Y'),
+            'month' => (int) $dt->format('n'),
+            'day'   => (int) $dt->format('j'),
         ]);
     }
 
@@ -76,25 +77,25 @@ final class DatePicker extends Component
         $dt = $this->getSelectedDate();
         // Modify month first
         $newDt = $dt->modify(($delta > 0 ? '+' : '') . $delta . ' months');
-        
+
         // Handle PHP "overflow" (Jan 31 + 1 month = March 3). Clamp to last day of month.
-        if ((int)$newDt->format('n') !== ($dt->format('n') + $delta + 12) % 12 ?: 12) {
-             $newDt = $newDt->modify('last day of last month');
+        if ((int) $newDt->format('n') !== ($dt->format('n') + $delta + 12) % 12 ?: 12) {
+            $newDt = $newDt->modify('last day of last month');
         }
 
         $s->batch([
-            'year'  => (int)$newDt->format('Y'),
-            'month' => (int)$newDt->format('n'),
-            'day'   => (int)$newDt->format('j'),
+            'year'  => (int) $newDt->format('Y'),
+            'month' => (int) $newDt->format('n'),
+            'day'   => (int) $newDt->format('j'),
         ]);
     }
 
     private function getSelectedDate(): DateTimeImmutable
     {
         return new DateTimeImmutable(sprintf(
-            '%04d-%02d-%02d', 
-            $this->state->year, 
-            $this->state->month, 
+            '%04d-%02d-%02d',
+            $this->state->year,
+            $this->state->month,
             $this->state->day
         ));
     }
@@ -112,10 +113,10 @@ final class DatePicker extends Component
             Terminal::moveCursorUp($this->lastLines);
         }
 
-        $year  = (int)$this->state->year;
-        $month = (int)$this->state->month;
-        $day   = (int)$this->state->day;
-        $done  = (bool)$this->state->done;
+        $year  = (int) $this->state->year;
+        $month = (int) $this->state->month;
+        $day   = (int) $this->state->day;
+        $done  = (bool) $this->state->done;
 
         $lines = [];
         $lines[] = Colors::wrap('? ', Colors::CYAN) . Colors::wrap($this->question, Colors::BOLD);
@@ -123,8 +124,8 @@ final class DatePicker extends Component
         if (!$done) {
             $currentDt = $this->getSelectedDate();
             $firstOfMonth = $currentDt->modify('first day of this month');
-            $daysInMonth = (int)$currentDt->format('t');
-            $startColumn = (int)$firstOfMonth->format('N') - 1; // 0 (Mon) to 6 (Sun)
+            $daysInMonth = (int) $currentDt->format('t');
+            $startColumn = (int) $firstOfMonth->format('N') - 1; // 0 (Mon) to 6 (Sun)
 
             $lines[] = '';
             $lines[] = '  ' . Colors::wrap($currentDt->format('F Y'), [Colors::BOLD, Colors::CYAN]);
@@ -136,9 +137,9 @@ final class DatePicker extends Component
             for ($d = 1; $d <= $daysInMonth; $d++) {
                 $isToday = $this->isToday($year, $month, $d);
                 $isSelected = ($d === $day);
-                
-                $label = str_pad((string)$d, 2, ' ', STR_PAD_LEFT);
-                
+
+                $label = str_pad((string) $d, 2, ' ', STR_PAD_LEFT);
+
                 if ($isSelected) {
                     // Reverse video for the "Cursor"
                     $cell = Colors::wrap(" {$label}", ["\033[7m", Colors::CYAN, Colors::BOLD]);

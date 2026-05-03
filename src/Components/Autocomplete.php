@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace AlfacodeTeam\PhpIoCli\Components;
@@ -45,11 +46,11 @@ final class Autocomplete extends Component
         ]);
 
         // 1. Text Input Logic (Multibyte Safe)
-        $this->input->fallback(function ($s, $key) {
+        $this->input->fallback(function ($s, $key): void {
             if (Key::isPrintable($key)) {
-                $cur = (int)$s->cursor;
-                $val = (string)$s->value;
-                
+                $cur = (int) $s->cursor;
+                $val = (string) $s->value;
+
                 $s->value = mb_substr($val, 0, $cur) . $key . mb_substr($val, $cur);
                 $s->cursor = $cur + 1;
                 $s->focused = 0; // Reset focus on type
@@ -57,45 +58,47 @@ final class Autocomplete extends Component
         });
 
         // 2. Navigation & Deletion
-        $this->input->bind('BACKSPACE', function ($s) {
-            $cur = (int)$s->cursor;
-            if ($cur === 0) return;
-            
-            $val = (string)$s->value;
+        $this->input->bind('BACKSPACE', function ($s): void {
+            $cur = (int) $s->cursor;
+            if ($cur === 0) {
+                return;
+            }
+
+            $val = (string) $s->value;
             $s->value = mb_substr($val, 0, $cur - 1) . mb_substr($val, $cur);
             $s->cursor = $cur - 1;
             $s->focused = 0;
         });
 
-        $this->input->bind('LEFT',  fn($s) => $s->decrement('cursor'));
-        $this->input->bind('RIGHT', fn($s) => $s->increment('cursor', mb_strlen((string)$s->value)));
+        $this->input->bind('LEFT', fn($s) => $s->decrement('cursor'));
+        $this->input->bind('RIGHT', fn($s) => $s->increment('cursor', mb_strlen((string) $s->value)));
 
-        $this->input->bind('UP', function ($s) {
+        $this->input->bind('UP', function ($s): void {
             $s->decrement('focused');
         });
 
-        $this->input->bind('DOWN', function ($s) {
+        $this->input->bind('DOWN', function ($s): void {
             $count = count($this->getFiltered());
             $s->increment('focused', $count > 0 ? $count - 1 : 0);
         });
 
         // 3. Selection Logic
-        $this->input->bind('TAB', function ($s) {
+        $this->input->bind('TAB', function ($s): void {
             $filtered = $this->getFiltered();
             if (!empty($filtered)) {
-                $selection = $filtered[(int)$s->focused] ?? $filtered[0];
+                $selection = $filtered[(int) $s->focused] ?? $filtered[0];
                 $s->value = $selection;
                 $s->cursor = mb_strlen($selection);
             }
         });
 
-        $this->input->bind('ENTER', function ($s) {
+        $this->input->bind('ENTER', function ($s): void {
             $filtered = $this->getFiltered();
-            $val = (string)$s->value;
+            $val = (string) $s->value;
 
             // If a suggestion is highlighted and different from current text, "fill" it first
             if (!empty($filtered) && $val !== '') {
-                $highlighted = $filtered[(int)$s->focused] ?? null;
+                $highlighted = $filtered[(int) $s->focused] ?? null;
                 if ($highlighted && $highlighted !== $val) {
                     $s->value = $highlighted;
                     $s->cursor = mb_strlen($highlighted);
@@ -114,21 +117,21 @@ final class Autocomplete extends Component
             Terminal::moveCursorUp($this->lastLines);
         }
 
-        $val      = (string)$this->state->value;
-        $cur      = (int)$this->state->cursor;
-        $focused  = (int)$this->state->focused;
+        $val      = (string) $this->state->value;
+        $cur      = (int) $this->state->cursor;
+        $focused  = (int) $this->state->focused;
         $filtered = $this->getFiltered();
         $lines    = [];
 
         // HEADER
         $lines[] = Colors::wrap('? ', Colors::CYAN) . Colors::wrap($this->question, Colors::BOLD);
 
-        if (!(bool)$this->state->done) {
+        if (!(bool) $this->state->done) {
             // INPUT LINE WITH VIRTUAL CARET
             $before = mb_substr($val, 0, $cur);
             $at     = mb_substr($val, $cur, 1);
             $after  = mb_substr($val, $cur + 1);
-            
+
             // Caret styling (Reverse Video)
             $caretChar = ($at === '') ? ' ' : $at;
             $caret     = Colors::wrap($caretChar, ["\033[7m", Colors::YELLOW]);
@@ -161,7 +164,7 @@ final class Autocomplete extends Component
     private function renderDropdown(array $filtered, int $focused): array
     {
         $visible = array_slice($filtered, 0, $this->maxSuggestions);
-        
+
         // Calculate dynamic width based on content
         $width = $this->minDropdownWidth;
         foreach ($visible as $item) {
@@ -175,10 +178,10 @@ final class Autocomplete extends Component
 
         foreach ($visible as $i => $item) {
             $active = $i === $focused;
-            
+
             $icon = $active ? Colors::wrap('› ', Colors::GREEN) : '  ';
             $text = $active ? Colors::wrap($item, [Colors::YELLOW, Colors::BOLD]) : Colors::muted($item);
-            
+
             // Padded line construction
             $contentLen = mb_strlen(Colors::strip($item));
             $padding    = str_repeat(' ', max(0, $width - $contentLen - 4));
@@ -203,6 +206,6 @@ final class Autocomplete extends Component
 
     private function getFiltered(): array
     {
-        return Fuzzy::filter($this->suggestions, (string)$this->state->value);
+        return Fuzzy::filter($this->suggestions, (string) $this->state->value);
     }
 }

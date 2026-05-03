@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace AlfacodeTeam\PhpIoCli\Tests\Unit;
@@ -52,9 +53,15 @@ final class HooksTest extends TestCase
     {
         $log = [];
 
-        $this->hooks->on('event', function () use (&$log): void { $log[] = 'A'; });
-        $this->hooks->on('event', function () use (&$log): void { $log[] = 'B'; });
-        $this->hooks->on('event', function () use (&$log): void { $log[] = 'C'; });
+        $this->hooks->on('event', function () use (&$log): void {
+            $log[] = 'A';
+        });
+        $this->hooks->on('event', function () use (&$log): void {
+            $log[] = 'B';
+        });
+        $this->hooks->on('event', function () use (&$log): void {
+            $log[] = 'C';
+        });
 
         $this->hooks->dispatch('event');
 
@@ -110,8 +117,12 @@ final class HooksTest extends TestCase
     {
         $count = 0;
 
-        $this->hooks->on('event', function () use (&$count): void { $count++; });
-        $this->hooks->on('event', function () use (&$count): void { $count++; });
+        $this->hooks->on('event', function () use (&$count): void {
+            $count++;
+        });
+        $this->hooks->on('event', function () use (&$count): void {
+            $count++;
+        });
 
         $this->hooks->off('event');
         $this->hooks->dispatch('event');

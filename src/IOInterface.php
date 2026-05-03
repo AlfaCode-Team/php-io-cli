@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace AlfacodeTeam\PhpIoCli;
@@ -32,9 +33,11 @@ interface IOInterface extends LoggerInterface
      */
     public function writeError($messages, bool $newline = true, int $verbosity = self::NORMAL): void;
 
-    public function writeRaw($messages, bool $newline = true, int $verbosity = self::NORMAL): void;
+    // FIX: $messages was untyped (PHPStan error). Typed as string|array to match write/writeError.
+    public function writeRaw(string|array $messages, bool $newline = true, int $verbosity = self::NORMAL): void;
 
-    public function writeErrorRaw($messages, bool $newline = true, int $verbosity = self::NORMAL): void;
+    // FIX: same as above
+    public function writeErrorRaw(string|array $messages, bool $newline = true, int $verbosity = self::NORMAL): void;
 
     /**
      * @param string|string[] $messages
@@ -48,8 +51,6 @@ interface IOInterface extends LoggerInterface
 
     /* =========================================================
        INTERACTIVE METHODS
-       Note: These can be implemented by calling your 
-       reactive components (e.g. Select.php) internally.
     ========================================================= */
 
     public function ask(string $question, mixed $default = null): mixed;
@@ -65,11 +66,11 @@ interface IOInterface extends LoggerInterface
      * @phpstan-return ($multiselect is true ? list<string> : string|int|bool)
      */
     public function select(
-        string $question, 
-        array $choices, 
-        mixed $default, 
-        bool|int $attempts = false, 
-        string $errorMessage = 'Value "%s" is invalid', 
+        string $question,
+        array $choices,
+        mixed $default,
+        bool|int $attempts = false,
+        string $errorMessage = 'Value "%s" is invalid',
         bool $multiselect = false
     ): int|string|array|bool;
 }

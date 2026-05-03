@@ -1,5 +1,6 @@
 #!/usr/bin/env php
 <?php
+
 /**
  * php-io-cli — Example: Full CLI Application with Commands
  *
@@ -37,9 +38,9 @@ final class DeployCommand extends AbstractCommand
         $this->description = 'Deploy the application to an environment';
 
         $this->addArgument('environment', 'Target environment', required: true);
-        $this->addOption('tag',     't', 'Git tag to deploy',        acceptsValue: true, default: 'latest');
+        $this->addOption('tag', 't', 'Git tag to deploy', acceptsValue: true, default: 'latest');
         $this->addOption('dry-run', 'd', 'Simulate without side-effects');
-        $this->addOption('force',   'f', 'Skip confirmation prompt');
+        $this->addOption('force', 'f', 'Skip confirmation prompt');
     }
 
     protected function handle(): int
@@ -107,7 +108,7 @@ final class MigrateCommand extends AbstractCommand
         $this->description = 'Run pending database migrations';
 
         $this->addOption('rollback', 'r', 'Rollback the last batch');
-        $this->addOption('steps',    's', 'Number of steps to roll back', acceptsValue: true, default: '1');
+        $this->addOption('steps', 's', 'Number of steps to roll back', acceptsValue: true, default: '1');
     }
 
     protected function handle(): int
@@ -190,7 +191,7 @@ final class MakeModuleCommand extends AbstractCommand
         $this->table()
             ->headers(['File', 'Status'])
             ->rows(array_map(
-                fn (string $f) => ["src/{$name}/{$f}.php", Colors::wrap('created', Colors::GREEN)],
+                fn(string $f) => ["src/{$name}/{$f}.php", Colors::wrap('created', Colors::GREEN)],
                 $features
             ))
             ->render();

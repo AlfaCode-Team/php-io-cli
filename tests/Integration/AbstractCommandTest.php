@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace AlfacodeTeam\PhpIoCli\Tests\Integration;
@@ -235,12 +236,16 @@ final class AbstractCommandTest extends TestCase
     {
         $io  = new BufferIO();
         $cmd = new EchoCommand();
-        $cmd->execute([], $io); // populate io
 
-        ob_start();
+        // execute() wires $this->io inside the command; printHelp() uses the
+        // same io, so all output lands in BufferIO — not in PHP's output buffer.
+        $cmd->execute(['placeholder'], $io);
         $cmd->printHelp();
-        $help = ob_get_clean();
 
-        $this->assertStringContainsString('echo', (string)$help);
+        // FIX: was ob_start()/ob_get_clean() which captured PHP stdout (always
+        // empty here). Read from the BufferIO stream instead.
+        $help = $io->getOutput();
+
+        $this->assertStringContainsString('echo', $help);
     }
 }

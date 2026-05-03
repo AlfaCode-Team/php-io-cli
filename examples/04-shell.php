@@ -1,5 +1,6 @@
 #!/usr/bin/env php
 <?php
+
 /**
  * php-io-cli — Example: Shell::run + SpinnerComponent integration
  *
@@ -29,8 +30,8 @@ $phpVersion = Shell::capture('php --version');
 $gitVersion = Shell::capture('git --version');
 
 echo PHP_EOL;
-Colors::line("    PHP: " . explode("\n", (string)$phpVersion)[0], Colors::GREEN);
-Colors::line("    Git: " . (string)$gitVersion, Colors::GREEN);
+Colors::line("    PHP: " . explode("\n", (string) $phpVersion)[0], Colors::GREEN);
+Colors::line("    Git: " . (string) $gitVersion, Colors::GREEN);
 echo PHP_EOL;
 
 // ── Example 2: Shell::run with SpinnerComponent ────────────────────

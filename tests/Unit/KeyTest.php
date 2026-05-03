@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace AlfacodeTeam\PhpIoCli\Tests\Unit;
@@ -33,7 +34,7 @@ final class KeyTest extends TestCase
             'home'            => ["\e[H",   'HOME'],
             'end'             => ["\e[F",   'END'],
             'enter (newline)' => ["\n",     'ENTER'],
-            'enter (carriage)'=> ["\r",     'ENTER'],
+            'enter (carriage)' => ["\r",     'ENTER'],
             'tab'             => ["\t",     'TAB'],
             'esc'             => ["\e",     'ESC'],
             'backspace (del)' => ["\x7f",   'BACKSPACE'],

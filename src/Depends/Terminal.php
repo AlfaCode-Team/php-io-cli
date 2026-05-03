@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace AlfacodeTeam\PhpIoCli\Depends;
@@ -10,7 +11,7 @@ namespace AlfacodeTeam\PhpIoCli\Depends;
 final class Terminal
 {
     private static bool $rawEnabled = false;
-    private static ?string $originalMode = null;
+    private static string|bool|null $originalMode = null;
 
     public static function isWindows(): bool
     {
@@ -23,8 +24,9 @@ final class Terminal
 
     public static function enableRaw(): void
     {
-        if (self::$rawEnabled)
+        if (self::$rawEnabled) {
             return;
+        }
 
         if (self::isWindows()) {
             // Enable ANSI/VT100 support for modern Windows Terminal/CMD
@@ -59,8 +61,9 @@ final class Terminal
 
     public static function disableRaw(): void
     {
-        if (!self::$rawEnabled)
+        if (!self::$rawEnabled) {
             return;
+        }
 
         if (!self::isWindows() && self::$originalMode) {
             system('stty ' . self::$originalMode);
@@ -89,7 +92,7 @@ final class Terminal
     }
 
     /**
-     * Fixes the "Headache": 
+     * Fixes the "Headache":
      * Uses a tiny 10ms settle-time to ensure multi-byte keys (Arrows, Home)
      * are captured as a single string instead of being fragmented.
      */

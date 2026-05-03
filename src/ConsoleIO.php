@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace AlfacodeTeam\PhpIoCli;
@@ -240,22 +241,22 @@ class ConsoleIO extends BaseIO
        WRITING
     ========================================================= */
 
-    public function write($messages, bool $newline = true, int $verbosity = self::NORMAL): void
+    public function write(mixed $messages, bool $newline = true, int $verbosity = self::NORMAL): void
     {
         $this->doWrite($messages, $newline, false, $verbosity);
     }
 
-    public function writeError($messages, bool $newline = true, int $verbosity = self::NORMAL): void
+    public function writeError(mixed $messages, bool $newline = true, int $verbosity = self::NORMAL): void
     {
         $this->doWrite($messages, $newline, true, $verbosity);
     }
 
-    public function writeRaw($messages, bool $newline = true, int $verbosity = self::NORMAL): void
+    public function writeRaw(mixed $messages, bool $newline = true, int $verbosity = self::NORMAL): void
     {
         $this->doWrite($messages, $newline, false, $verbosity, raw: true);
     }
 
-    public function writeErrorRaw($messages, bool $newline = true, int $verbosity = self::NORMAL): void
+    public function writeErrorRaw(mixed $messages, bool $newline = true, int $verbosity = self::NORMAL): void
     {
         $this->doWrite($messages, $newline, true, $verbosity, raw: true);
     }
@@ -279,7 +280,7 @@ class ConsoleIO extends BaseIO
             $mem     = round(memory_get_usage() / 1024 / 1024, 1);
             $time    = round(microtime(true) - $this->startTime, 2);
             $prefix  = Colors::muted("[{$mem}MiB/{$time}s] ");
-            $messages = array_map(fn ($m) => $prefix . $m, $messages);
+            $messages = array_map(fn($m) => $prefix . $m, $messages);
         }
 
         $target = $stderr ? $this->getErrorOutput() : $this->output;
@@ -297,12 +298,12 @@ class ConsoleIO extends BaseIO
        OVERWRITE
     ========================================================= */
 
-    public function overwrite($messages, bool $newline = true, ?int $size = null, int $verbosity = self::NORMAL): void
+    public function overwrite(mixed $messages, bool $newline = true, ?int $size = null, int $verbosity = self::NORMAL): void
     {
         $this->doOverwrite($messages, $newline, $size, false, $verbosity);
     }
 
-    public function overwriteError($messages, bool $newline = true, ?int $size = null, int $verbosity = self::NORMAL): void
+    public function overwriteError(mixed $messages, bool $newline = true, ?int $size = null, int $verbosity = self::NORMAL): void
     {
         $this->doOverwrite($messages, $newline, $size, true, $verbosity);
     }
@@ -341,9 +342,24 @@ class ConsoleIO extends BaseIO
             : $this->output;
     }
 
-    public function isInteractive(): bool  { return $this->input->isInteractive(); }
-    public function isVerbose(): bool      { return $this->output->getVerbosity() >= OutputInterface::VERBOSITY_VERBOSE; }
-    public function isVeryVerbose(): bool  { return $this->output->getVerbosity() >= OutputInterface::VERBOSITY_VERY_VERBOSE; }
-    public function isDebug(): bool        { return $this->output->getVerbosity() >= OutputInterface::VERBOSITY_DEBUG; }
-    public function isDecorated(): bool    { return $this->output->isDecorated(); }
+    public function isInteractive(): bool
+    {
+        return $this->input->isInteractive();
+    }
+    public function isVerbose(): bool
+    {
+        return $this->output->getVerbosity() >= OutputInterface::VERBOSITY_VERBOSE;
+    }
+    public function isVeryVerbose(): bool
+    {
+        return $this->output->getVerbosity() >= OutputInterface::VERBOSITY_VERY_VERBOSE;
+    }
+    public function isDebug(): bool
+    {
+        return $this->output->getVerbosity() >= OutputInterface::VERBOSITY_DEBUG;
+    }
+    public function isDecorated(): bool
+    {
+        return $this->output->isDecorated();
+    }
 }

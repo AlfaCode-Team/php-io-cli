@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace AlfacodeTeam\PhpIoCli\Depends;
@@ -124,7 +125,7 @@ final class Renderer implements IRenderer
 
         $lines[] = ($start > 0) ? Colors::wrap('   ↑ more items', Colors::GRAY) : ' ';
 
-        foreach (array_slice($filtered, $start, $windowSize) as $i => $label) {
+        foreach (array_values(array_slice($filtered, $start, $windowSize)) as $i => $label) {
             $realIndex  = $start + $i;
             $isActive   = $realIndex === $index;
             $isSelected = in_array($label, (array) ($state->selected ?? []), true);

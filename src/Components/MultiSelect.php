@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace AlfacodeTeam\PhpIoCli\Components;
@@ -9,7 +10,7 @@ use AlfacodeTeam\PhpIoCli\Depends\Terminal;
 
 /**
  * Multiple selection list using Spacebar to toggle.
- * 
+ *
  * // $items = (new MultiSelect('Select features:', ['Auth', 'API', 'Docker']))->run();
  */
 final class MultiSelect extends Component
@@ -27,11 +28,11 @@ final class MultiSelect extends Component
 
         $this->input->bind('UP', fn($s) => $s->decrement('index'));
         $this->input->bind('DOWN', fn($s) => $s->increment('index', count($this->choices) - 1));
-        $this->input->bind(' ', function($s) {
+        $this->input->bind(' ', function ($s): void {
             $val = $this->choices[$s->index];
             $s->toggle('selected', $val);
         });
-        $this->input->bind('ENTER', function($s) {
+        $this->input->bind('ENTER', function ($s): void {
             $s->done = true;
             $this->stop();
         });
@@ -39,15 +40,17 @@ final class MultiSelect extends Component
 
     public function render(): void
     {
-        if ($this->lastLines > 0) Terminal::moveCursorUp($this->lastLines);
-        
+        if ($this->lastLines > 0) {
+            Terminal::moveCursorUp($this->lastLines);
+        }
+
         $lines = [Colors::wrap('? ', Colors::CYAN) . Colors::wrap($this->question, Colors::BOLD)];
 
         if (!$this->state->done) {
             foreach ($this->choices as $i => $item) {
                 $active = $i === $this->state->index;
-                $checked = in_array($item, (array)$this->state->selected, true);
-                
+                $checked = in_array($item, (array) $this->state->selected, true);
+
                 $pointer = $active ? Colors::wrap('› ', Colors::CYAN) : '  ';
                 $box = $checked ? Colors::wrap('⬢ ', Colors::GREEN) : Colors::wrap('⬡ ', Colors::GRAY);
                 $label = $active ? Colors::wrap($item, Colors::YELLOW) : Colors::wrap($item, Colors::GRAY);
@@ -56,7 +59,7 @@ final class MultiSelect extends Component
             }
             $lines[] = Colors::muted('  ↑↓ move • Space toggle • Enter submit');
         } else {
-            $lines[] = Colors::wrap('  › ', Colors::GRAY) . Colors::wrap(implode(', ', (array)$this->state->selected), Colors::GREEN);
+            $lines[] = Colors::wrap('  › ', Colors::GRAY) . Colors::wrap(implode(', ', (array) $this->state->selected), Colors::GREEN);
         }
 
         foreach ($lines as $line) {
@@ -66,8 +69,8 @@ final class MultiSelect extends Component
         $this->lastLines = count($lines);
     }
 
-     public function resolve(): array
+    public function resolve(): array
     {
-        return (array)$this->state->selected;
+        return (array) $this->state->selected;
     }
 }

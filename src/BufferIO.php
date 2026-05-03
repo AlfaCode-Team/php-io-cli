@@ -1,4 +1,5 @@
-<?php 
+<?php
+
 declare(strict_types=1);
 
 namespace AlfacodeTeam\PhpIoCli;
@@ -17,8 +18,8 @@ use AlfacodeTeam\PhpIoCli\Depends\Colors;
 class BufferIO extends ConsoleIO
 {
     public function __construct(
-        string $input = '', 
-        int $verbosity = StreamOutput::VERBOSITY_NORMAL, 
+        string $input = '',
+        int $verbosity = StreamOutput::VERBOSITY_NORMAL,
         ?OutputFormatterInterface $formatter = null
     ) {
         $inputInstance = new StringInput($input);
@@ -68,12 +69,12 @@ class BufferIO extends ConsoleIO
 
     /**
      * Simulated interaction for testing prompts.
-     * 
+     *
      * @param string[] $inputs Array of keys/strings to "type"
      */
     public function setUserInputs(array $inputs): void
     {
-      
+
         if (!$this->input instanceof StreamableInputInterface) {
             throw new \RuntimeException('Setting the user inputs requires at least the version 3.2 of the symfony/console component.');
         }
@@ -95,7 +96,7 @@ class BufferIO extends ConsoleIO
         }
 
         foreach ($inputs as $input) {
-            fwrite($stream, $input.PHP_EOL);
+            fwrite($stream, $input . PHP_EOL);
         }
 
         rewind($stream);

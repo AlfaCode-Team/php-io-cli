@@ -1,4 +1,5 @@
-<?php 
+<?php
+
 declare(strict_types=1);
 
 namespace AlfacodeTeam\PhpIoCli;
@@ -48,7 +49,7 @@ final class Hooks
 
         $this->listeners[$event] = array_values(array_filter(
             $this->listeners[$event],
-            fn ($l) => $l !== $listener
+            fn($l) => $l !== $listener
         ));
 
         return $this;

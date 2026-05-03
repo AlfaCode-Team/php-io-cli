@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace AlfacodeTeam\PhpIoCli\Depends;
@@ -39,8 +40,14 @@ final class Colors
         return self::$enabled = function_exists('posix_isatty') && @posix_isatty(STDOUT);
     }
 
-    public static function enable(): void  { self::$enabled = true; }
-    public static function disable(): void { self::$enabled = false; }
+    public static function enable(): void
+    {
+        self::$enabled = true;
+    }
+    public static function disable(): void
+    {
+        self::$enabled = false;
+    }
 
     /* --- Constants --- */
     public const RESET     = "\033[0m";
@@ -55,6 +62,7 @@ final class Colors
     public const BLUE    = "\033[34m";
     public const MAGENTA = "\033[35m";
     public const CYAN    = "\033[36m";
+    public const WHITE   = "\033[37m";
     public const GRAY    = "\033[90m";
     public const BLACK   = "\033[30m";
     public const BG_CYAN = "\033[46m";

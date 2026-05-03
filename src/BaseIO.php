@@ -1,10 +1,11 @@
 <?php
+
 declare(strict_types=1);
 
 namespace AlfacodeTeam\PhpIoCli;
 
 use AlfacodeTeam\PhpIoCli\Depends\Colors;
-use AlfacodeTeam\PhpIoCli\Silencer;           // ← THE FIX: was only in a docblock before, never imported
+use AlfacodeTeam\PhpIoCli\Silencer;
 use Psr\Log\LogLevel;
 use Stringable;
 
@@ -14,13 +15,14 @@ use Stringable;
  */
 abstract class BaseIO implements IOInterface
 {
-
-    public function writeRaw($messages, bool $newline = true, int $verbosity = self::NORMAL): void
+    // FIX: $messages was untyped — PHPStan error "has parameter $messages with no type specified".
+    // Typed as string|array to match the IOInterface contract for write/writeError.
+    public function writeRaw(string|array $messages, bool $newline = true, int $verbosity = self::NORMAL): void
     {
         $this->write($messages, $newline, $verbosity);
     }
 
-    public function writeErrorRaw($messages, bool $newline = true, int $verbosity = self::NORMAL): void
+    public function writeErrorRaw(string|array $messages, bool $newline = true, int $verbosity = self::NORMAL): void
     {
         $this->writeError($messages, $newline, $verbosity);
     }
@@ -30,28 +32,44 @@ abstract class BaseIO implements IOInterface
     ========================================================= */
 
     public function emergency(string|Stringable $message, array $context = []): void
-    { $this->log(LogLevel::EMERGENCY, $message, $context); }
+    {
+        $this->log(LogLevel::EMERGENCY, $message, $context);
+    }
 
     public function alert(string|Stringable $message, array $context = []): void
-    { $this->log(LogLevel::ALERT, $message, $context); }
+    {
+        $this->log(LogLevel::ALERT, $message, $context);
+    }
 
     public function critical(string|Stringable $message, array $context = []): void
-    { $this->log(LogLevel::CRITICAL, $message, $context); }
+    {
+        $this->log(LogLevel::CRITICAL, $message, $context);
+    }
 
     public function error(string|Stringable $message, array $context = []): void
-    { $this->log(LogLevel::ERROR, $message, $context); }
+    {
+        $this->log(LogLevel::ERROR, $message, $context);
+    }
 
     public function warning(string|Stringable $message, array $context = []): void
-    { $this->log(LogLevel::WARNING, $message, $context); }
+    {
+        $this->log(LogLevel::WARNING, $message, $context);
+    }
 
     public function notice(string|Stringable $message, array $context = []): void
-    { $this->log(LogLevel::NOTICE, $message, $context); }
+    {
+        $this->log(LogLevel::NOTICE, $message, $context);
+    }
 
     public function info(string|Stringable $message, array $context = []): void
-    { $this->log(LogLevel::INFO, $message, $context); }
+    {
+        $this->log(LogLevel::INFO, $message, $context);
+    }
 
     public function debug(string|Stringable $message, array $context = []): void
-    { $this->log(LogLevel::DEBUG, $message, $context); }
+    {
+        $this->log(LogLevel::DEBUG, $message, $context);
+    }
 
     /**
      * Core logging logic with ANSI theming and safe JSON context serialisation.
@@ -64,8 +82,7 @@ abstract class BaseIO implements IOInterface
         $output = (string) $message;
 
         if ($context !== []) {
-            // Silencer is now properly imported — this call will resolve correctly.
-            $json = Silencer::call(static fn () => json_encode(
+            $json = Silencer::call(static fn() => json_encode(
                 $context,
                 JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_IGNORE
             ));

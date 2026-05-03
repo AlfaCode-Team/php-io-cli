@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace AlfacodeTeam\PhpIoCli\Tests\Integration;
@@ -195,8 +196,14 @@ final class CLIApplicationTest extends TestCase
 
         // Create a command that throws
         $cmd = new class extends AbstractCommand {
-            protected function configure(): void { $this->name = 'boom'; }
-            protected function handle(): int { throw new \RuntimeException('Boom!'); }
+            protected function configure(): void
+            {
+                $this->name = 'boom';
+            }
+            protected function handle(): int
+            {
+                throw new \RuntimeException('Boom!');
+            }
         };
 
         $app = (new CLIApplication())
