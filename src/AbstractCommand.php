@@ -4,20 +4,13 @@ declare(strict_types=1);
 namespace AlfacodeTeam\PhpIoCli;
 
 use AlfacodeTeam\PhpIoCli\Components\Alert;
-use AlfacodeTeam\PhpIoCli\Components\Autocomplete;
 use AlfacodeTeam\PhpIoCli\Components\Confirm;
-use AlfacodeTeam\PhpIoCli\Components\DatePicker;
-use AlfacodeTeam\PhpIoCli\Components\MultiSelect;
-use AlfacodeTeam\PhpIoCli\Components\NumberInput;
-use AlfacodeTeam\PhpIoCli\Components\Password;
 use AlfacodeTeam\PhpIoCli\Components\ProgressBar;
 use AlfacodeTeam\PhpIoCli\Components\Select;
 use AlfacodeTeam\PhpIoCli\Components\SpinnerComponent;
 use AlfacodeTeam\PhpIoCli\Components\Table;
 use AlfacodeTeam\PhpIoCli\Components\TextInput;
 use AlfacodeTeam\PhpIoCli\Depends\Colors;
-use AlfacodeTeam\PhpIoCli\Depends\Terminal;
-use DateTimeImmutable;
 use LogicException;
 use Throwable;
 
@@ -175,17 +168,16 @@ abstract class AbstractCommand
     {
         return $this->options[ltrim($name, '-')] ?? $default;
     }
-    // protected function hasOption(string $name): bool { return (bool)$this->option($name); }
 
     protected function argument(string $name, mixed $default = null): mixed
     {
         return $this->arguments[$name] ?? $default;
     }
+
     protected function hasOption(string $name): bool
     {
         return (bool) ($this->options[ltrim($name, '-')] ?? false);
     }
-
 
     protected function info(string $message): void
     {
@@ -214,15 +206,17 @@ abstract class AbstractCommand
             $this->io->write('');
         }
     }
+
     protected function section(string $title): void
     {
         $this->newLine();
         $this->io->write(Colors::wrap($title, [Colors::BOLD, Colors::CYAN]));
         $this->io->write(Colors::muted(str_repeat('─', mb_strlen(Colors::strip($title)))));
     }
+
     /* =========================================================
-         Alert Components (Restored)
-      ========================================================= */
+       Alert Components
+    ========================================================= */
 
     protected function alertSuccess(string $title, string|array $body = []): void
     {
@@ -243,7 +237,6 @@ abstract class AbstractCommand
     {
         Alert::info($title, $body);
     }
-
 
     /* =========================================================
        Component Factory Methods
@@ -276,7 +269,6 @@ abstract class AbstractCommand
     {
         return new SpinnerComponent($label, $style);
     }
-
 
     /* =========================================================
        Help Generation
@@ -311,8 +303,15 @@ abstract class AbstractCommand
     {
         return $this->name;
     }
+
     final public function getDescription(): string
     {
         return $this->description;
+    }
+
+    // FIX: was missing — called by CLIApplication::all() to filter hidden commands
+    final public function isHidden(): bool
+    {
+        return $this->hidden;
     }
 }
