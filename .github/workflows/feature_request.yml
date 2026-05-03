@@ -1,0 +1,57 @@
+name: Feature Request
+description: Suggest a new component, API improvement, or enhancement
+labels: ["enhancement", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Have an idea? We'd love to hear it. Please describe your feature request below.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / motivation
+      description: What problem does this feature solve? What are you trying to do that isn't possible today?
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: Describe the feature you'd like to see. Include example code / API design if possible.
+      placeholder: |
+        ```php
+        // Example of how the new API would look
+        $result = (new MyNewComponent('Question'))->option1()->run();
+        ```
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Any alternative approaches or workarounds you've tried.
+    validations:
+      required: false
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      multiple: true
+      options:
+        - "New component"
+        - "Existing component improvement"
+        - "AbstractCommand / CLIApplication"
+        - "IOInterface / IO layer"
+        - "Shell integration"
+        - "Colors / Terminal"
+        - "Testing utilities"
+        - "Documentation"
+        - "Performance"
+        - "Windows support"
+        - "Other"
+    validations:
+      required: true
