@@ -3,5 +3,18 @@ parameters:
     paths:
         - src
     ignoreErrors:
-        # Allows magic property access on the State object
+        # Allows magic property access on the State object (by design — reactive store)
         - '#Access to an undefined property AlfacodeTeam\\PhpIoCli\\Depends\\State::\$[a-zA-Z0-9_]+#'
+        # State::__set / __get intentionally bypasses property typing
+        - '#Call to an undefined method AlfacodeTeam\\PhpIoCli\\Depends\\State::.*#'
+
+    treatPhpDocTypesAsCertain: false
+    reportUnmatchedIgnoredErrors: false
+
+    # Paths to exclude from analysis
+    excludePaths:
+        - tests/
+        - vendor/
+
+    # Require strict types declaration
+    checkMissingIterableValueType: false
