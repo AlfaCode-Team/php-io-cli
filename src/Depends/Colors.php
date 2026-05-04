@@ -40,7 +40,7 @@ final class Colors
 
     public const BG_CYAN = "\033[46m";
 
-    private static bool|null $enabled = null;
+    private static ?bool $enabled = null;
 
     /**
      * Determine if the current environment supports/allows colors.

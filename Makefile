@@ -52,6 +52,9 @@ stan:
 cs-check:
 	vendor/bin/php-cs-fixer fix --dry-run --diff --config=php-cs-fixer.php
 
+cs-check2:
+	vendor/bin/php-cs-fixer fix --dry-run --diff --format=checkstyle
+
 cs-fix:
 	vendor/bin/php-cs-fixer fix --config=php-cs-fixer.php
 	@printf "\n$(GREEN)✔ Code style fixes applied.$(RESET)\n"

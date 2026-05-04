@@ -36,7 +36,7 @@ final class Hooks
     /**
      * Unsubscribe from an event.
      */
-    public function off(string $event, callable|null $listener = null): self
+    public function off(string $event, ?callable $listener = null): self
     {
         if (!isset($this->listeners[$event])) {
             return $this;

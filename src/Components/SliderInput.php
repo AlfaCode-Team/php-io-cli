@@ -55,6 +55,55 @@ final class SliderInput extends Component
     }
 
     /* =========================================================
+       LIFECYCLE
+    ========================================================= */
+
+    protected function setup(): void
+    {
+        $this->state->batch([
+            'value' => $this->defaultValue,
+            'done' => false,
+        ]);
+
+        // Single step left / right
+        $this->input->bind('LEFT', function ($s): void {
+            $s->value = $this->clamp((float) $s->value - $this->step);
+        });
+
+        $this->input->bind('RIGHT', function ($s): void {
+            $s->value = $this->clamp((float) $s->value + $this->step);
+        });
+
+        // Jump 10 % of range per page key / shift-arrow equivalent ([ and ])
+        $this->input->bind(['[', 'PAGE_UP'], function ($s): void {
+            $jump = ($this->max - $this->min) * 0.1;
+            $s->value = $this->clamp((float) $s->value - $jump);
+        });
+
+        $this->input->bind([']', 'PAGE_DOWN'], function ($s): void {
+            $jump = ($this->max - $this->min) * 0.1;
+            $s->value = $this->clamp((float) $s->value + $jump);
+        });
+
+        // Home / End — jump to extremes
+        $this->input->bind('HOME', function ($s): void {
+            $s->value = $this->min;
+        });
+
+        $this->input->bind('END', function ($s): void {
+            $s->value = $this->max;
+        });
+
+        // Submit
+        $this->input->bind('ENTER', function ($s): void {
+            // Snap to nearest step on submit
+            $s->value = $this->snap((float) $s->value);
+            $s->done = true;
+            $this->stop();
+        });
+    }
+
+    /* =========================================================
        FLUENT CONFIGURATION
     ========================================================= */
 
@@ -101,55 +150,6 @@ final class SliderInput extends Component
     }
 
     /* =========================================================
-       LIFECYCLE
-    ========================================================= */
-
-    protected function setup(): void
-    {
-        $this->state->batch([
-            'value' => $this->defaultValue,
-            'done'  => false,
-        ]);
-
-        // Single step left / right
-        $this->input->bind('LEFT', function ($s): void {
-            $s->value = $this->clamp((float) $s->value - $this->step);
-        });
-
-        $this->input->bind('RIGHT', function ($s): void {
-            $s->value = $this->clamp((float) $s->value + $this->step);
-        });
-
-        // Jump 10 % of range per page key / shift-arrow equivalent ([ and ])
-        $this->input->bind(['[', 'PAGE_UP'], function ($s): void {
-            $jump = ($this->max - $this->min) * 0.1;
-            $s->value = $this->clamp((float) $s->value - $jump);
-        });
-
-        $this->input->bind([']', 'PAGE_DOWN'], function ($s): void {
-            $jump = ($this->max - $this->min) * 0.1;
-            $s->value = $this->clamp((float) $s->value + $jump);
-        });
-
-        // Home / End — jump to extremes
-        $this->input->bind('HOME', function ($s): void {
-            $s->value = $this->min;
-        });
-
-        $this->input->bind('END', function ($s): void {
-            $s->value = $this->max;
-        });
-
-        // Submit
-        $this->input->bind('ENTER', function ($s): void {
-            // Snap to nearest step on submit
-            $s->value = $this->snap((float) $s->value);
-            $s->done  = true;
-            $this->stop();
-        });
-    }
-
-    /* =========================================================
        RENDER
     ========================================================= */
 
@@ -162,7 +162,7 @@ final class SliderInput extends Component
         Terminal::hideCursor();
 
         $value = (float) $this->state->value;
-        $done  = (bool)  $this->state->done;
+        $done = (bool) $this->state->done;
         $lines = [];
 
         // ── Line 1: question ──────────────────────────────────
@@ -218,22 +218,22 @@ final class SliderInput extends Component
     private function buildBar(float $value): string
     {
         $range = $this->max - $this->min;
-        $pct   = $range > 0 ? ($value - $this->min) / $range : 0.0;
-        $pct   = max(0.0, min(1.0, $pct));
+        $pct = $range > 0 ? ($value - $this->min) / $range : 0.0;
+        $pct = max(0.0, min(1.0, $pct));
 
         $filled = (int) round($this->barWidth * $pct);
-        $empty  = $this->barWidth - $filled;
+        $empty = $this->barWidth - $filled;
 
         // Thumb sits at the boundary between filled and empty
         $thumbPos = $filled > 0 ? $filled - 1 : 0;
         $filledStr = str_repeat('━', $thumbPos) . Colors::wrap('●', [Colors::CYAN, Colors::BOLD]) . str_repeat('━', max(0, $filled - $thumbPos - 1));
-        $emptyStr  = Colors::muted(str_repeat('─', $empty));
+        $emptyStr = Colors::muted(str_repeat('─', $empty));
 
         $color = match (true) {
             $pct >= 0.75 => Colors::GREEN,
             $pct >= 0.40 => Colors::CYAN,
             $pct >= 0.15 => Colors::YELLOW,
-            default      => Colors::RED,
+            default => Colors::RED,
         };
 
         return Colors::wrap('[', Colors::GRAY)
@@ -270,9 +270,9 @@ final class SliderInput extends Component
 
         // Auto-detect required decimal places from step
         $decimals = 0;
-        $stepStr  = rtrim(rtrim(number_format($this->step, 10, '.', ''), '0'), '.');
+        $stepStr = mb_rtrim(mb_rtrim(number_format($this->step, 10, '.', ''), '0'), '.');
         if (str_contains($stepStr, '.')) {
-            $decimals = strlen(explode('.', $stepStr)[1]);
+            $decimals = mb_strlen(explode('.', $stepStr)[1]);
         }
 
         return number_format($value, $decimals, '.', '');

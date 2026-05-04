@@ -131,7 +131,7 @@ final class SliderInputTest extends TestCase
         $slider->step(1)->default(50);
         $this->mountWithoutLoop($slider);
 
-        $output = $this->capture(fn() => $slider->render());
+        $output = $this->capture(static fn() => $slider->render());
 
         $this->assertStringContainsString('Master volume', $output);
     }
@@ -146,7 +146,7 @@ final class SliderInputTest extends TestCase
         $slider->step(1)->default(75)->integer();
         $this->mountWithoutLoop($slider);
 
-        $output = $this->capture(fn() => $slider->render());
+        $output = $this->capture(static fn() => $slider->render());
 
         $this->assertStringContainsString('75', $output);
     }
@@ -161,7 +161,7 @@ final class SliderInputTest extends TestCase
         $slider->step(1)->default(5);
         $this->mountWithoutLoop($slider);
 
-        $output = $this->capture(fn() => $slider->render());
+        $output = $this->capture(static fn() => $slider->render());
 
         $this->assertStringContainsString('[', $output);
         $this->assertStringContainsString(']', $output);
@@ -177,7 +177,7 @@ final class SliderInputTest extends TestCase
         $slider->step(1)->default(30)->integer();
         $this->mountWithoutLoop($slider);
 
-        $output = $this->capture(fn() => $slider->render());
+        $output = $this->capture(static fn() => $slider->render());
 
         $this->assertStringContainsString('1', $output);
         $this->assertStringContainsString('60', $output);
@@ -193,7 +193,7 @@ final class SliderInputTest extends TestCase
         $slider->step(1)->default(50);
         $this->mountWithoutLoop($slider);
 
-        $output = $this->capture(fn() => $slider->render());
+        $output = $this->capture(static fn() => $slider->render());
 
         $this->assertStringContainsString('ENTER', $output);
     }
@@ -209,7 +209,7 @@ final class SliderInputTest extends TestCase
         $slider->step(1)->default(5);
         $this->mountWithoutLoop($slider);
 
-        $output = $this->capture(fn() => $slider->render());
+        $output = $this->capture(static fn() => $slider->render());
 
         // No ANSI escape sequences should appear
         $this->assertStringNotContainsString("\033[", $output);
@@ -226,7 +226,7 @@ final class SliderInputTest extends TestCase
         $slider->step(1)->default(0)->integer();
         $this->mountWithoutLoop($slider);
 
-        $output = $this->capture(fn() => $slider->render());
+        $output = $this->capture(static fn() => $slider->render());
 
         // The slider thumb is rendered as ●
         $this->assertStringContainsString('●', $output);
@@ -242,7 +242,7 @@ final class SliderInputTest extends TestCase
         $slider->step(0.01)->default(0.75);
         $this->mountWithoutLoop($slider);
 
-        $output = $this->capture(fn() => $slider->render());
+        $output = $this->capture(static fn() => $slider->render());
 
         $this->assertStringContainsString('0.75', $output);
     }

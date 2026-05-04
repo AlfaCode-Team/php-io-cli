@@ -65,7 +65,7 @@ function demoTextInput(): void
     $name = (new TextInput('What is your name?'))
         ->placeholder('e.g. Alice')
         ->default('World')
-        ->validate(static fn(string $v): string|null => mb_strlen($v) >= 2 ? null : 'Name must be ≥ 2 characters')
+        ->validate(static fn(string $v): ?string => mb_strlen($v) >= 2 ? null : 'Name must be ≥ 2 characters')
         ->run();
 
     result('Name', $name);

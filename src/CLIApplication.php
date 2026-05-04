@@ -57,7 +57,7 @@ final class CLIApplication
      * IO layer — built automatically on first access via io().
      * Can be replaced with withIO() for tests or custom environments.
      */
-    private IOInterface|null $io = null;
+    private ?IOInterface $io = null;
 
     private bool $catchExceptions = true;
 
@@ -237,7 +237,7 @@ final class CLIApplication
      *
      * @return int POSIX exit code (0 = success)
      */
-    public function run(array|null $argv = null): int
+    public function run(?array $argv = null): int
     {
         $argv ??= array_slice($_SERVER['argv'] ?? [], 1);
         $token = $argv[0] ?? '';

@@ -50,12 +50,12 @@ interface IOInterface extends LoggerInterface
     /**
      * @param string|string[] $messages
      */
-    public function overwrite(string|array $messages, bool $newline = true, int|null $size = null, int $verbosity = self::NORMAL): void;
+    public function overwrite(string|array $messages, bool $newline = true, ?int $size = null, int $verbosity = self::NORMAL): void;
 
     /**
      * @param string|string[] $messages
      */
-    public function overwriteError(string|array $messages, bool $newline = true, int|null $size = null, int $verbosity = self::NORMAL): void;
+    public function overwriteError(string|array $messages, bool $newline = true, ?int $size = null, int $verbosity = self::NORMAL): void;
 
     /* =========================================================
        INTERACTIVE METHODS
@@ -65,9 +65,9 @@ interface IOInterface extends LoggerInterface
 
     public function askConfirmation(string $question, bool $default = true): bool;
 
-    public function askAndValidate(string $question, callable $validator, int|null $attempts = null, mixed $default = null): mixed;
+    public function askAndValidate(string $question, callable $validator, ?int $attempts = null, mixed $default = null): mixed;
 
-    public function askAndHideAnswer(string $question): string|null;
+    public function askAndHideAnswer(string $question): ?string;
 
     /**
      * @param string[] $choices

@@ -17,13 +17,13 @@ use AlfacodeTeam\PhpIoCli\Depends\Terminal;
  */
 final class NumberInput extends Component
 {
-    private float|null $min = null;
+    private ?float $min = null;
 
-    private float|null $max = null;
+    private ?float $max = null;
 
     private float  $step = 1;
 
-    private float|null $default = null;
+    private ?float $default = null;
 
     private bool   $intOnly = false;
 

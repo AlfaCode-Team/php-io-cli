@@ -17,7 +17,7 @@ use PHPUnit\Framework\TestCase;
 final class ConfirmCommand extends AbstractCommand
 {
     // Expose the IO so we can call it directly in the fixture
-    private \AlfacodeTeam\PhpIoCli\IOInterface|null $ioRef = null;
+    private ?\AlfacodeTeam\PhpIoCli\IOInterface $ioRef = null;
 
     public function setIORef(\AlfacodeTeam\PhpIoCli\IOInterface $io): void
     {

@@ -54,9 +54,9 @@ class NullIO extends BaseIO
     // FIX: same as above
     public function writeErrorRaw(string|array $messages, bool $newline = true, int $verbosity = self::NORMAL): void {}
 
-    public function overwrite($messages, bool $newline = true, int|null $size = null, int $verbosity = self::NORMAL): void {}
+    public function overwrite($messages, bool $newline = true, ?int $size = null, int $verbosity = self::NORMAL): void {}
 
-    public function overwriteError($messages, bool $newline = true, int|null $size = null, int $verbosity = self::NORMAL): void {}
+    public function overwriteError($messages, bool $newline = true, ?int $size = null, int $verbosity = self::NORMAL): void {}
 
     /* =========================================================
        Interactive — all return defaults
@@ -75,13 +75,13 @@ class NullIO extends BaseIO
     public function askAndValidate(
         string   $question,
         callable $validator,
-        int|null     $attempts = null,
+        ?int     $attempts = null,
         mixed    $default = null,
     ): mixed {
         return $default;
     }
 
-    public function askAndHideAnswer(string $question): string|null
+    public function askAndHideAnswer(string $question): ?string
     {
         return null;
     }
