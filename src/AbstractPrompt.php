@@ -36,8 +36,6 @@ abstract class AbstractPrompt implements IPromptComponent, ILifecycle
 
             while ($this->running) {
                 if ($this->context->dirty) {
-                    // Give subclasses (or an injected IRenderer) a chance to
-                    // run beforeRender / afterRender hooks around render().
                     $this->beforeRenderHook();
                     $this->render();
                     $this->afterRenderHook();
