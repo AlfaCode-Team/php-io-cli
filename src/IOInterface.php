@@ -12,26 +12,34 @@ use Psr\Log\LoggerInterface;
 interface IOInterface extends LoggerInterface
 {
     public const QUIET = 1;
+
     public const NORMAL = 2;
+
     public const VERBOSE = 4;
+
     public const VERY_VERBOSE = 8;
+
     public const DEBUG = 16;
 
     public function isInteractive(): bool;
+
     public function isVerbose(): bool;
+
     public function isVeryVerbose(): bool;
+
     public function isDebug(): bool;
+
     public function isDecorated(): bool;
 
     /**
      * @param string|string[] $messages
      */
-    public function write($messages, bool $newline = true, int $verbosity = self::NORMAL): void;
+    public function write(string|array $messages, bool $newline = true, int $verbosity = self::NORMAL): void;
 
     /**
      * @param string|string[] $messages
      */
-    public function writeError($messages, bool $newline = true, int $verbosity = self::NORMAL): void;
+    public function writeError(string|array $messages, bool $newline = true, int $verbosity = self::NORMAL): void;
 
     // FIX: $messages was untyped (PHPStan error). Typed as string|array to match write/writeError.
     public function writeRaw(string|array $messages, bool $newline = true, int $verbosity = self::NORMAL): void;
@@ -42,12 +50,12 @@ interface IOInterface extends LoggerInterface
     /**
      * @param string|string[] $messages
      */
-    public function overwrite($messages, bool $newline = true, ?int $size = null, int $verbosity = self::NORMAL): void;
+    public function overwrite(string|array $messages, bool $newline = true, int|null $size = null, int $verbosity = self::NORMAL): void;
 
     /**
      * @param string|string[] $messages
      */
-    public function overwriteError($messages, bool $newline = true, ?int $size = null, int $verbosity = self::NORMAL): void;
+    public function overwriteError(string|array $messages, bool $newline = true, int|null $size = null, int $verbosity = self::NORMAL): void;
 
     /* =========================================================
        INTERACTIVE METHODS
@@ -57,12 +65,13 @@ interface IOInterface extends LoggerInterface
 
     public function askConfirmation(string $question, bool $default = true): bool;
 
-    public function askAndValidate(string $question, callable $validator, ?int $attempts = null, mixed $default = null): mixed;
+    public function askAndValidate(string $question, callable $validator, int|null $attempts = null, mixed $default = null): mixed;
 
-    public function askAndHideAnswer(string $question): ?string;
+    public function askAndHideAnswer(string $question): string|null;
 
     /**
      * @param string[] $choices
+     *
      * @phpstan-return ($multiselect is true ? list<string> : string|int|bool)
      */
     public function select(
@@ -71,6 +80,6 @@ interface IOInterface extends LoggerInterface
         mixed $default,
         bool|int $attempts = false,
         string $errorMessage = 'Value "%s" is invalid',
-        bool $multiselect = false
+        bool $multiselect = false,
     ): int|string|array|bool;
 }

@@ -54,12 +54,12 @@ final class Alert
         echo Colors::wrap(str_repeat(' ', $visualWidth), $color . '48') . PHP_EOL; // 48 = BG
 
         // Title Line
-        $titleLine = "  " . strtoupper($title);
+        $titleLine = '  ' . mb_strtoupper($title);
         echo Colors::wrap(self::padVisual($titleLine, $visualWidth), [Colors::BOLD, $color . '48', Colors::WHITE]) . PHP_EOL;
 
         // Body
         foreach ($body as $line) {
-            echo Colors::wrap(self::padVisual("  " . $line, $visualWidth), $color . '48') . PHP_EOL;
+            echo Colors::wrap(self::padVisual('  ' . $line, $visualWidth), $color . '48') . PHP_EOL;
         }
 
         // Bottom Padding
@@ -81,14 +81,14 @@ final class Alert
         echo PHP_EOL . Colors::wrap('┌' . str_repeat('─', $innerWidth) . '┐', $t) . PHP_EOL;
 
         // 2. Title Line
-        $formattedTitle = " " . Colors::wrap($icon, [$color, Colors::BOLD]) . " " . Colors::wrap($title, Colors::BOLD);
+        $formattedTitle = ' ' . Colors::wrap($icon, [$color, Colors::BOLD]) . ' ' . Colors::wrap($title, Colors::BOLD);
         echo Colors::wrap('│', $t) . self::padVisual($formattedTitle, $innerWidth) . Colors::wrap('│', $t) . PHP_EOL;
 
         // 3. Body Content
         if (!empty($body)) {
             echo Colors::wrap('├' . str_repeat('─', $innerWidth) . '┤', $t) . PHP_EOL;
             foreach ($body as $line) {
-                echo Colors::wrap('│', $t) . self::padVisual("  " . $line, $innerWidth) . Colors::wrap('│', $t) . PHP_EOL;
+                echo Colors::wrap('│', $t) . self::padVisual('  ' . $line, $innerWidth) . Colors::wrap('│', $t) . PHP_EOL;
             }
         }
 
@@ -102,6 +102,7 @@ final class Alert
         foreach ($body as $line) {
             $max = max($max, mb_strlen(Colors::strip((string) $line)));
         }
+
         return $max;
     }
 
@@ -112,6 +113,7 @@ final class Alert
     private static function padVisual(string $text, int $width): string
     {
         $visualLen = mb_strlen(Colors::strip($text));
+
         return $text . str_repeat(' ', max(0, $width - $visualLen));
     }
 }

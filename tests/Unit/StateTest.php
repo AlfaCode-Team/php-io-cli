@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace AlfacodeTeam\PhpIoCli\Tests\Unit;
 
 use AlfacodeTeam\PhpIoCli\Depends\State;
-use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
 
-#[CoversClass(\AlfacodeTeam\PhpIoCli\Depends\State::class)]
+#[CoversClass(State::class)]
 final class StateTest extends TestCase
 {
     // ---------------------------------------------------------------
@@ -50,7 +50,7 @@ final class StateTest extends TestCase
         $state = new State(['x' => 1]);
         $calls = 0;
 
-        $state->watch('x', function () use (&$calls): void {
+        $state->watch('x', static function () use (&$calls): void {
             $calls++;
         });
 
@@ -142,11 +142,11 @@ final class StateTest extends TestCase
 
     public function test_watcher_fires_on_change(): void
     {
-        $state  = new State(['score' => 0]);
+        $state = new State(['score' => 0]);
         $newVal = null;
         $oldVal = null;
 
-        $state->watch('score', function (mixed $new, mixed $old) use (&$newVal, &$oldVal): void {
+        $state->watch('score', static function (mixed $new, mixed $old) use (&$newVal, &$oldVal): void {
             $newVal = $new;
             $oldVal = $old;
         });
@@ -162,10 +162,10 @@ final class StateTest extends TestCase
         $state = new State(['x' => 0]);
         $calls = [];
 
-        $state->watch('x', function () use (&$calls): void {
+        $state->watch('x', static function () use (&$calls): void {
             $calls[] = 'first';
         });
-        $state->watch('x', function () use (&$calls): void {
+        $state->watch('x', static function () use (&$calls): void {
             $calls[] = 'second';
         });
 
@@ -179,7 +179,7 @@ final class StateTest extends TestCase
         $state = new State(['x' => 0]);
         $capturedState = null;
 
-        $state->watch('x', function (mixed $new, mixed $old, State $s) use (&$capturedState): void {
+        $state->watch('x', static function (mixed $new, mixed $old, State $s) use (&$capturedState): void {
             $capturedState = $s;
         });
 

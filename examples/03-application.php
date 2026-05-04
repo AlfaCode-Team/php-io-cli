@@ -34,7 +34,7 @@ final class DeployCommand extends AbstractCommand
 {
     protected function configure(): void
     {
-        $this->name        = 'deploy';
+        $this->name = 'deploy';
         $this->description = 'Deploy the application to an environment';
 
         $this->addArgument('environment', 'Target environment', required: true);
@@ -45,21 +45,23 @@ final class DeployCommand extends AbstractCommand
 
     protected function handle(): int
     {
-        $env    = (string) $this->argument('environment');
-        $tag    = (string) $this->option('tag', 'latest');
+        $env = (string) $this->argument('environment');
+        $tag = (string) $this->option('tag', 'latest');
         $dryRun = $this->hasOption('dry-run');
 
         $this->section("Deployment: {$tag} → {$env}");
 
         if (!in_array($env, ['production', 'staging', 'development', 'local'], true)) {
             $this->error("Unknown environment: {$env}");
+
             return self::INVALID;
         }
 
         if ($env === 'production' && !$this->hasOption('force')) {
-            $confirmed = $this->confirm("You are deploying to PRODUCTION. Are you sure?", false);
+            $confirmed = $this->confirm('You are deploying to PRODUCTION. Are you sure?', false);
             if (!$confirmed) {
                 $this->muted('Deployment cancelled.');
+
                 return self::SUCCESS;
             }
         }
@@ -87,10 +89,10 @@ final class DeployCommand extends AbstractCommand
 
         $bar->finish("Deployed {$tag} → {$env}");
 
-        $this->alertSuccess("Deployment complete!", [
+        $this->alertSuccess('Deployment complete!', [
             "Environment: {$env}",
             "Tag: {$tag}",
-            "Dry-run: " . ($dryRun ? 'yes' : 'no'),
+            'Dry-run: ' . ($dryRun ? 'yes' : 'no'),
         ]);
 
         return self::SUCCESS;
@@ -104,7 +106,7 @@ final class MigrateCommand extends AbstractCommand
 {
     protected function configure(): void
     {
-        $this->name        = 'db:migrate';
+        $this->name = 'db:migrate';
         $this->description = 'Run pending database migrations';
 
         $this->addOption('rollback', 'r', 'Rollback the last batch');
@@ -114,7 +116,7 @@ final class MigrateCommand extends AbstractCommand
     protected function handle(): int
     {
         $rollback = $this->hasOption('rollback');
-        $steps    = (int) $this->option('steps', '1');
+        $steps = (int) $this->option('steps', '1');
 
         $this->section($rollback ? "Rolling back {$steps} migration(s)" : 'Running migrations');
 
@@ -124,6 +126,7 @@ final class MigrateCommand extends AbstractCommand
 
         if (empty($migrations)) {
             $this->info('Nothing to migrate.');
+
             return self::SUCCESS;
         }
 
@@ -158,7 +161,7 @@ final class MakeModuleCommand extends AbstractCommand
 {
     protected function configure(): void
     {
-        $this->name        = 'make:module';
+        $this->name = 'make:module';
         $this->description = 'Scaffold a new application module';
     }
 
@@ -168,9 +171,9 @@ final class MakeModuleCommand extends AbstractCommand
 
         $name = $this->ask('Module name (kebab-case)', 'my-module');
 
-        $features = (new \AlfacodeTeam\PhpIoCli\Components\MultiSelect(
+        $features = (new AlfacodeTeam\PhpIoCli\Components\MultiSelect(
             'Select features to include',
-            ['Controller', 'Repository', 'Service', 'Events', 'Tests', 'Migration', 'Factory']
+            ['Controller', 'Repository', 'Service', 'Events', 'Tests', 'Migration', 'Factory'],
         ))->run();
 
         $this->newLine();
@@ -191,14 +194,14 @@ final class MakeModuleCommand extends AbstractCommand
         $this->table()
             ->headers(['File', 'Status'])
             ->rows(array_map(
-                fn(string $f) => ["src/{$name}/{$f}.php", Colors::wrap('created', Colors::GREEN)],
-                $features
+                static fn(string $f) => ["src/{$name}/{$f}.php", Colors::wrap('created', Colors::GREEN)],
+                $features,
             ))
             ->render();
 
-        $this->alertSuccess("Module created!", [
+        $this->alertSuccess('Module created!', [
             "Name: {$name}",
-            "Files: " . count($features),
+            'Files: ' . count($features),
         ]);
 
         return self::SUCCESS;
@@ -212,7 +215,7 @@ final class EnvCommand extends AbstractCommand
 {
     protected function configure(): void
     {
-        $this->name        = 'env';
+        $this->name = 'env';
         $this->description = 'Display current environment variables';
         $this->addOption('filter', 'f', 'Filter by prefix', acceptsValue: true, default: '');
     }
@@ -233,12 +236,13 @@ final class EnvCommand extends AbstractCommand
         ];
 
         if ($filter !== '') {
-            $vars = array_filter($vars, fn($row) => str_starts_with($row[0], strtoupper($filter)));
+            $vars = array_filter($vars, static fn($row) => str_starts_with($row[0], mb_strtoupper($filter)));
             $vars = array_values($vars);
         }
 
         if (empty($vars)) {
             $this->warning("No variables matching prefix: {$filter}");
+
             return self::SUCCESS;
         }
 

@@ -24,15 +24,16 @@ class Silencer
     /**
      * @var int[] Unpop stack
      */
-    private static $stack = [];
+    private static array $stack = [];
 
     /**
      * Suppresses given mask or errors.
      *
      * @param  int|null $mask Error levels to suppress, default value NULL indicates all warnings and below.
+     *
      * @return int      The old error reporting level.
      */
-    public static function suppress(?int $mask = null): int
+    public static function suppress(int|null $mask = null): int
     {
         if (!isset($mask)) {
             $mask = E_WARNING | E_NOTICE | E_USER_WARNING | E_USER_NOTICE | E_DEPRECATED | E_USER_DEPRECATED;
@@ -59,10 +60,12 @@ class Silencer
      *
      * @param  callable   $callable Function to execute.
      * @param  mixed      $parameters Function to execute.
+     *
      * @throws \Exception Any exceptions from the callback are rethrown.
+     *
      * @return mixed      Return value of the callback.
      */
-    public static function call(callable $callable, ...$parameters)
+    public static function call(callable $callable, ...$parameters): mixed
     {
         try {
             self::suppress();
@@ -73,6 +76,7 @@ class Silencer
         } catch (\Exception $e) {
             // Use a finally block for this when requirements are raised to PHP 5.5
             self::restore();
+
             throw $e;
         }
     }

@@ -10,23 +10,34 @@ namespace AlfacodeTeam\PhpIoCli\Depends;
 final class Key
 {
     // Navigation
-    public const UP    = "\e[A";
-    public const DOWN  = "\e[B";
+    public const UP = "\e[A";
+
+    public const DOWN = "\e[B";
+
     public const RIGHT = "\e[C";
-    public const LEFT  = "\e[D";
-    public const HOME  = "\e[H";
-    public const END   = "\e[F";
+
+    public const LEFT = "\e[D";
+
+    public const HOME = "\e[H";
+
+    public const END = "\e[F";
 
     // Actions
-    public const ENTER     = "\n";
-    public const RETURN    = "\r";
-    public const TAB       = "\t";
-    public const ESC       = "\e";
+    public const ENTER = "\n";
+
+    public const RETURN = "\r";
+
+    public const TAB = "\t";
+
+    public const ESC = "\e";
+
     public const BACKSPACE = "\x7f";
-    public const DELETE    = "\e[3~";
+
+    public const DELETE = "\e[3~";
 
     // Common Ctrl sequences
     public const CTRL_C = "\x03";
+
     public const CTRL_D = "\x04";
 
     /**
@@ -35,20 +46,20 @@ final class Key
     public static function normalize(string $key): string
     {
         return match ($key) {
-            self::UP                => 'UP',
-            self::DOWN              => 'DOWN',
-            self::RIGHT             => 'RIGHT',
-            self::LEFT              => 'LEFT',
-            self::HOME              => 'HOME',
-            self::END               => 'END',
+            self::UP => 'UP',
+            self::DOWN => 'DOWN',
+            self::RIGHT => 'RIGHT',
+            self::LEFT => 'LEFT',
+            self::HOME => 'HOME',
+            self::END => 'END',
             self::ENTER, self::RETURN => 'ENTER',
-            self::TAB               => 'TAB',
-            self::ESC               => 'ESC',
+            self::TAB => 'TAB',
+            self::ESC => 'ESC',
             self::BACKSPACE, "\x08" => 'BACKSPACE',
-            self::DELETE            => 'DELETE',
-            self::CTRL_C            => 'CTRL_C',
-            self::CTRL_D            => 'CTRL_D',
-            default                 => $key
+            self::DELETE => 'DELETE',
+            self::CTRL_C => 'CTRL_C',
+            self::CTRL_D => 'CTRL_D',
+            default => $key,
         };
     }
 
@@ -64,6 +75,7 @@ final class Key
         }
 
         $ord = ord($key);
+
         return $ord >= 32 && $ord < 127;
     }
 }

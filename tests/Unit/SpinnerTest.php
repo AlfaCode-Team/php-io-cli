@@ -6,10 +6,10 @@ namespace AlfacodeTeam\PhpIoCli\Tests\Unit;
 
 use AlfacodeTeam\PhpIoCli\Depends\Spinner;
 use AlfacodeTeam\PhpIoCli\Depends\SpinnerFrames;
-use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
 
-#[CoversClass(\AlfacodeTeam\PhpIoCli\Depends\Spinner::class)]
+#[CoversClass(Spinner::class)]
 final class SpinnerTest extends TestCase
 {
     // ---------------------------------------------------------------
@@ -49,7 +49,7 @@ final class SpinnerTest extends TestCase
 
     public function test_tick_returns_value_from_provided_frames(): void
     {
-        $frames  = ['A', 'B', 'C'];
+        $frames = ['A', 'B', 'C'];
         $spinner = new Spinner($frames);
         $spinner->start();
 
@@ -65,7 +65,7 @@ final class SpinnerTest extends TestCase
     public function test_tick_advances_frame_after_interval(): void
     {
         // Use a very short interval so we don't wait long in tests
-        $frames  = ['X', 'Y', 'Z'];
+        $frames = ['X', 'Y', 'Z'];
         $spinner = new Spinner($frames, interval: 0.001); // 1 ms interval
         $spinner->start();
 
@@ -84,7 +84,7 @@ final class SpinnerTest extends TestCase
     public function test_frames_wrap_around_cyclically(): void
     {
         // Two frames, very short interval — tick many times to confirm cycling
-        $frames  = ['F1', 'F2'];
+        $frames = ['F1', 'F2'];
         $spinner = new Spinner($frames, interval: 0.0001);
         $spinner->start();
 
@@ -144,11 +144,11 @@ final class SpinnerTest extends TestCase
     public function test_tick_does_not_advance_before_interval(): void
     {
         // Long interval — frame should NOT change between two rapid ticks
-        $frames  = ['A', 'B', 'C'];
+        $frames = ['A', 'B', 'C'];
         $spinner = new Spinner($frames, interval: 60.0); // 60-second interval
         $spinner->start();
 
-        $first  = $spinner->tick();
+        $first = $spinner->tick();
         $second = $spinner->tick(); // called immediately — no time has passed
 
         $this->assertSame($first, $second, 'Frame must not advance before the interval elapses');

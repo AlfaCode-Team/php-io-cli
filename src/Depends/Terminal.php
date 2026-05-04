@@ -11,6 +11,7 @@ namespace AlfacodeTeam\PhpIoCli\Depends;
 final class Terminal
 {
     private static bool $rawEnabled = false;
+
     private static string|bool|null $originalMode = null;
 
     public static function isWindows(): bool
@@ -43,20 +44,13 @@ final class Terminal
             // Signal Handling: Restore terminal if user hits Ctrl+C
             if (function_exists('pcntl_signal')) {
                 pcntl_async_signals(true);
-                pcntl_signal(SIGINT, fn() => self::exitGracefully());
-                pcntl_signal(SIGTERM, fn() => self::exitGracefully());
+                pcntl_signal(SIGINT, static fn() => self::exitGracefully());
+                pcntl_signal(SIGTERM, static fn() => self::exitGracefully());
             }
         }
 
         self::$rawEnabled = true;
         register_shutdown_function([self::class, 'disableRaw']);
-    }
-
-    private static function exitGracefully(): void
-    {
-        self::disableRaw();
-        echo PHP_EOL . Colors::error(" Process interrupted.") . PHP_EOL;
-        exit(1);
     }
 
     public static function disableRaw(): void
@@ -91,29 +85,6 @@ final class Terminal
         return (string) $char;
     }
 
-    /**
-     * Fixes the "Headache":
-     * Uses a tiny 10ms settle-time to ensure multi-byte keys (Arrows, Home)
-     * are captured as a single string instead of being fragmented.
-     */
-    private static function readEscapeSequence(string $first): string
-    {
-        $sequence = $first;
-        stream_set_blocking(STDIN, false);
-
-        $start = microtime(true);
-        while ((microtime(true) - $start) < 0.01) { // 10ms window
-            $char = fgetc(STDIN);
-            if ($char !== false) {
-                $sequence .= $char;
-                $start = microtime(true); // reset window if we're still getting bytes
-            }
-        }
-
-        stream_set_blocking(STDIN, true);
-        return $sequence;
-    }
-
     /* =========================================================
        OUTPUT HELPERS
     ========================================================= */
@@ -136,5 +107,36 @@ final class Terminal
     public static function showCursor(): void
     {
         echo "\033[?25h";
+    }
+
+    private static function exitGracefully(): void
+    {
+        self::disableRaw();
+        echo PHP_EOL . Colors::error(' Process interrupted.') . PHP_EOL;
+        exit(1);
+    }
+
+    /**
+     * Fixes the "Headache":
+     * Uses a tiny 10ms settle-time to ensure multi-byte keys (Arrows, Home)
+     * are captured as a single string instead of being fragmented.
+     */
+    private static function readEscapeSequence(string $first): string
+    {
+        $sequence = $first;
+        stream_set_blocking(STDIN, false);
+
+        $start = microtime(true);
+        while ((microtime(true) - $start) < 0.01) { // 10ms window
+            $char = fgetc(STDIN);
+            if ($char !== false) {
+                $sequence .= $char;
+                $start = microtime(true); // reset window if we're still getting bytes
+            }
+        }
+
+        stream_set_blocking(STDIN, true);
+
+        return $sequence;
     }
 }

@@ -20,6 +20,7 @@ final class ShellResult
     {
         return $this->exitCode === 0;
     }
+
     public function failed(): bool
     {
         return $this->exitCode !== 0;
@@ -47,7 +48,7 @@ final class ShellResult
     {
         return array_values(array_filter(
             $this->stderr,
-            fn(string $l) => trim($l) !== ''
+            static fn(string $l) => mb_trim($l) !== '',
         ));
     }
 }

@@ -28,7 +28,7 @@ Colors::line("\n  php-io-cli — Interactive Components Demo\n", [Colors::BOLD, 
 $name = (new TextInput('What is your name?'))
     ->placeholder('e.g. Alice')
     ->default('World')
-    ->validate(fn(string $value): ?string => mb_strlen($value) >= 2 ? null : 'Name must be at least 2 characters.')
+    ->validate(static fn(string $value): string|null => mb_strlen($value) >= 2 ? null : 'Name must be at least 2 characters.')
     ->run();
 
 Colors::line("  → Name: {$name}", Colors::GREEN);
@@ -51,13 +51,13 @@ $secret = (new Password('Enter a password'))
     ->showStrength()
     ->run();
 
-Colors::line("  → Password length: " . mb_strlen((string) $secret) . " chars", Colors::GREEN);
+Colors::line('  → Password length: ' . mb_strlen((string) $secret) . ' chars', Colors::GREEN);
 
 // ── 4. Confirm ────────────────────────────────────────────────────
 
-$confirmed = (new Confirm("Do you want to continue?", true))->run();
+$confirmed = (new Confirm('Do you want to continue?', true))->run();
 
-Colors::line("  → Confirmed: " . ($confirmed ? 'Yes' : 'No'), Colors::GREEN);
+Colors::line('  → Confirmed: ' . ($confirmed ? 'Yes' : 'No'), Colors::GREEN);
 
 // ── 5. Select ─────────────────────────────────────────────────────
 
@@ -81,7 +81,7 @@ $features = (new MultiSelect('Which features to enable?', [
     'Rate Limiting',
 ]))->run();
 
-Colors::line("  → Features: " . implode(', ', $features), Colors::GREEN);
+Colors::line('  → Features: ' . implode(', ', $features), Colors::GREEN);
 
 // ── 7. Autocomplete ───────────────────────────────────────────────
 
@@ -98,10 +98,10 @@ Colors::line("  → Framework: {$framework}", Colors::GREEN);
 
 $date = (new DatePicker('Select a release date'))->run();
 
-Colors::line("  → Date: " . $date->format('Y-m-d'), Colors::GREEN);
+Colors::line('  → Date: ' . $date->format('Y-m-d'), Colors::GREEN);
 
 // ── Summary ───────────────────────────────────────────────────────
 
 echo PHP_EOL;
-Colors::line("  All inputs collected successfully!", [Colors::BOLD, Colors::GREEN]);
+Colors::line('  All inputs collected successfully!', [Colors::BOLD, Colors::GREEN]);
 echo PHP_EOL;

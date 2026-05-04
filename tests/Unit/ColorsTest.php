@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace AlfacodeTeam\PhpIoCli\Tests\Unit;
 
 use AlfacodeTeam\PhpIoCli\Depends\Colors;
-use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
 
-#[CoversClass(\AlfacodeTeam\PhpIoCli\Depends\Colors::class)]
+#[CoversClass(Colors::class)]
 final class ColorsTest extends TestCase
 {
     protected function setUp(): void
@@ -101,7 +101,7 @@ final class ColorsTest extends TestCase
 
     public function test_strip_removes_ansi_color_codes(): void
     {
-        $input  = "\033[32mGreen\033[0m";
+        $input = "\033[32mGreen\033[0m";
         $result = Colors::strip($input);
 
         $this->assertSame('Green', $result);
@@ -109,7 +109,7 @@ final class ColorsTest extends TestCase
 
     public function test_strip_removes_cursor_sequences(): void
     {
-        $input  = "\033[2K\rSome text";
+        $input = "\033[2K\rSome text";
         $result = Colors::strip($input);
 
         $this->assertSame('Some text', $result);
@@ -117,7 +117,7 @@ final class ColorsTest extends TestCase
 
     public function test_strip_removes_carriage_returns(): void
     {
-        $input  = "line1\rline2";
+        $input = "line1\rline2";
         $result = Colors::strip($input);
 
         $this->assertSame('line1line2', $result);
@@ -132,7 +132,7 @@ final class ColorsTest extends TestCase
 
     public function test_strip_handles_complex_ansi_string(): void
     {
-        $input  = Colors::wrap('bold cyan', [Colors::BOLD, Colors::CYAN]);
+        $input = Colors::wrap('bold cyan', [Colors::BOLD, Colors::CYAN]);
         $result = Colors::strip($input);
 
         $this->assertSame('bold cyan', $result);

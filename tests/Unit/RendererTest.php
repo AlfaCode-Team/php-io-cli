@@ -8,11 +8,10 @@ use AlfacodeTeam\PhpIoCli\Depends\Colors;
 use AlfacodeTeam\PhpIoCli\Depends\RenderContext;
 use AlfacodeTeam\PhpIoCli\Depends\Renderer;
 use AlfacodeTeam\PhpIoCli\Depends\State;
-use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
 
 /**
- *
  * Strategy
  * ─────────
  * Renderer writes directly to stdout via `echo`. We wrap every assertion
@@ -23,7 +22,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
  * via Colors::strip() before assertions so tests are not brittle against
  * ANSI details.
  */
-#[CoversClass(\AlfacodeTeam\PhpIoCli\Depends\Renderer::class)]
+#[CoversClass(Renderer::class)]
 final class RendererTest extends TestCase
 {
     protected function setUp(): void
@@ -34,30 +33,6 @@ final class RendererTest extends TestCase
     protected function tearDown(): void
     {
         Colors::enable();
-    }
-
-    // ---------------------------------------------------------------
-    // Helpers
-    // ---------------------------------------------------------------
-
-    private function capture(callable $fn): string
-    {
-        ob_start();
-        $fn();
-        return Colors::strip((string) ob_get_clean());
-    }
-
-    private function makeState(array $data = []): State
-    {
-        return new State(array_merge([
-            'question' => 'Choose an item',
-            'search'   => '',
-            'index'    => 0,
-            'loading'  => false,
-            'items'    => ['Alpha', 'Beta', 'Gamma', 'Delta'],
-            'selected' => [],
-            'multi'    => false,
-        ], $data));
     }
 
     // ---------------------------------------------------------------
@@ -78,10 +53,10 @@ final class RendererTest extends TestCase
     public function test_render_outputs_question(): void
     {
         $renderer = new Renderer();
-        $state    = $this->makeState(['question' => 'Pick a region']);
-        $ctx      = new RenderContext();
+        $state = $this->makeState(['question' => 'Pick a region']);
+        $ctx = new RenderContext();
 
-        $output = $this->capture(fn() => $renderer->render($state, $ctx));
+        $output = $this->capture(static fn() => $renderer->render($state, $ctx));
 
         $this->assertStringContainsString('Pick a region', $output);
     }
@@ -89,12 +64,12 @@ final class RendererTest extends TestCase
     public function test_render_outputs_list_items(): void
     {
         $renderer = new Renderer();
-        $state    = $this->makeState([
+        $state = $this->makeState([
             'items' => ['PHP', 'Python', 'Go'],
         ]);
         $ctx = new RenderContext();
 
-        $output = $this->capture(fn() => $renderer->render($state, $ctx));
+        $output = $this->capture(static fn() => $renderer->render($state, $ctx));
 
         $this->assertStringContainsString('PHP', $output);
         $this->assertStringContainsString('Python', $output);
@@ -108,9 +83,9 @@ final class RendererTest extends TestCase
     public function test_render_state_produces_same_structure(): void
     {
         $renderer = new Renderer();
-        $state    = $this->makeState(['question' => 'Pick one']);
+        $state = $this->makeState(['question' => 'Pick one']);
 
-        $output = $this->capture(fn() => $renderer->renderState($state));
+        $output = $this->capture(static fn() => $renderer->renderState($state));
 
         $this->assertStringContainsString('Pick one', $output);
     }
@@ -122,10 +97,10 @@ final class RendererTest extends TestCase
     public function test_loading_state_shows_loading_indicator(): void
     {
         $renderer = new Renderer();
-        $state    = $this->makeState(['loading' => true]);
-        $ctx      = new RenderContext();
+        $state = $this->makeState(['loading' => true]);
+        $ctx = new RenderContext();
 
-        $output = $this->capture(fn() => $renderer->render($state, $ctx));
+        $output = $this->capture(static fn() => $renderer->render($state, $ctx));
 
         $this->assertStringContainsString('Loading', $output);
     }
@@ -133,13 +108,13 @@ final class RendererTest extends TestCase
     public function test_loading_state_hides_item_list(): void
     {
         $renderer = new Renderer();
-        $state    = $this->makeState([
+        $state = $this->makeState([
             'loading' => true,
-            'items'   => ['Alpha', 'Beta'],
+            'items' => ['Alpha', 'Beta'],
         ]);
         $ctx = new RenderContext();
 
-        $output = $this->capture(fn() => $renderer->render($state, $ctx));
+        $output = $this->capture(static fn() => $renderer->render($state, $ctx));
 
         // Items should not appear while loading
         $this->assertStringNotContainsString('Alpha', $output);
@@ -152,10 +127,10 @@ final class RendererTest extends TestCase
     public function test_empty_items_shows_no_results_message(): void
     {
         $renderer = new Renderer();
-        $state    = $this->makeState(['items' => [], 'loading' => false]);
-        $ctx      = new RenderContext();
+        $state = $this->makeState(['items' => [], 'loading' => false]);
+        $ctx = new RenderContext();
 
-        $output = $this->capture(fn() => $renderer->render($state, $ctx));
+        $output = $this->capture(static fn() => $renderer->render($state, $ctx));
 
         $this->assertStringContainsString('No results', $output);
     }
@@ -167,13 +142,13 @@ final class RendererTest extends TestCase
     public function test_active_item_receives_highlight_marker(): void
     {
         $renderer = new Renderer();
-        $state    = $this->makeState([
+        $state = $this->makeState([
             'items' => ['Alpha', 'Beta', 'Gamma'],
             'index' => 1,
         ]);
         $ctx = new RenderContext();
 
-        $output = $this->capture(fn() => $renderer->render($state, $ctx));
+        $output = $this->capture(static fn() => $renderer->render($state, $ctx));
 
         // The active item pointer '›' should appear alongside 'Beta'
         $this->assertStringContainsString('Beta', $output);
@@ -187,14 +162,14 @@ final class RendererTest extends TestCase
     public function test_multi_mode_renders_checkboxes(): void
     {
         $renderer = new Renderer();
-        $state    = $this->makeState([
-            'items'    => ['Auth', 'API', 'Queue'],
-            'multi'    => true,
+        $state = $this->makeState([
+            'items' => ['Auth', 'API', 'Queue'],
+            'multi' => true,
             'selected' => ['Auth'],
         ]);
         $ctx = new RenderContext();
 
-        $output = $this->capture(fn() => $renderer->render($state, $ctx));
+        $output = $this->capture(static fn() => $renderer->render($state, $ctx));
 
         // Filled ⬢ for selected, empty ⬡ for unselected
         $this->assertStringContainsString('⬢', $output);
@@ -204,14 +179,14 @@ final class RendererTest extends TestCase
     public function test_multi_mode_marks_selected_item(): void
     {
         $renderer = new Renderer();
-        $state    = $this->makeState([
-            'items'    => ['Auth', 'API'],
-            'multi'    => true,
+        $state = $this->makeState([
+            'items' => ['Auth', 'API'],
+            'multi' => true,
             'selected' => ['Auth'],
         ]);
         $ctx = new RenderContext();
 
-        $output = $this->capture(fn() => $renderer->render($state, $ctx));
+        $output = $this->capture(static fn() => $renderer->render($state, $ctx));
 
         $this->assertStringContainsString('Auth', $output);
     }
@@ -223,11 +198,11 @@ final class RendererTest extends TestCase
     public function test_scroll_indicator_shown_when_items_exceed_window(): void
     {
         $renderer = new Renderer();
-        $items    = array_map(fn($i) => "Item-{$i}", range(1, 20));
-        $state    = $this->makeState(['items' => $items, 'index' => 0]);
-        $ctx      = new RenderContext();
+        $items = array_map(static fn($i) => "Item-{$i}", range(1, 20));
+        $state = $this->makeState(['items' => $items, 'index' => 0]);
+        $ctx = new RenderContext();
 
-        $output = $this->capture(fn() => $renderer->render($state, $ctx));
+        $output = $this->capture(static fn() => $renderer->render($state, $ctx));
 
         // When there are more items than the window size (10), a "more" hint appears
         $this->assertStringContainsString('more items', $output);
@@ -240,10 +215,10 @@ final class RendererTest extends TestCase
     public function test_search_query_appears_in_output(): void
     {
         $renderer = new Renderer();
-        $state    = $this->makeState(['search' => 'alph']);
-        $ctx      = new RenderContext();
+        $state = $this->makeState(['search' => 'alph']);
+        $ctx = new RenderContext();
 
-        $output = $this->capture(fn() => $renderer->render($state, $ctx));
+        $output = $this->capture(static fn() => $renderer->render($state, $ctx));
 
         $this->assertStringContainsString('alph', $output);
     }
@@ -251,10 +226,10 @@ final class RendererTest extends TestCase
     public function test_search_label_appears_in_output(): void
     {
         $renderer = new Renderer();
-        $state    = $this->makeState();
-        $ctx      = new RenderContext();
+        $state = $this->makeState();
+        $ctx = new RenderContext();
 
-        $output = $this->capture(fn() => $renderer->render($state, $ctx));
+        $output = $this->capture(static fn() => $renderer->render($state, $ctx));
 
         $this->assertStringContainsString('Search', $output);
     }
@@ -266,11 +241,11 @@ final class RendererTest extends TestCase
     public function test_before_render_does_not_throw(): void
     {
         $renderer = new Renderer();
-        $state    = $this->makeState();
-        $ctx      = new RenderContext();
+        $state = $this->makeState();
+        $ctx = new RenderContext();
 
         // beforeRender emits cursor-hide escape codes — capture and discard
-        $this->capture(fn() => $renderer->beforeRender($state, $ctx));
+        $this->capture(static fn() => $renderer->beforeRender($state, $ctx));
 
         $this->assertTrue(true);
     }
@@ -278,10 +253,10 @@ final class RendererTest extends TestCase
     public function test_after_render_does_not_throw(): void
     {
         $renderer = new Renderer();
-        $state    = $this->makeState();
-        $ctx      = new RenderContext();
+        $state = $this->makeState();
+        $ctx = new RenderContext();
 
-        $this->capture(fn() => $renderer->afterRender($state, $ctx));
+        $this->capture(static fn() => $renderer->afterRender($state, $ctx));
 
         $this->assertTrue(true);
     }
@@ -293,10 +268,10 @@ final class RendererTest extends TestCase
     public function test_single_select_footer_contains_nav_and_enter(): void
     {
         $renderer = new Renderer();
-        $state    = $this->makeState(['multi' => false]);
-        $ctx      = new RenderContext();
+        $state = $this->makeState(['multi' => false]);
+        $ctx = new RenderContext();
 
-        $output = $this->capture(fn() => $renderer->render($state, $ctx));
+        $output = $this->capture(static fn() => $renderer->render($state, $ctx));
 
         $this->assertStringContainsString('nav', $output);
         $this->assertStringContainsString('enter', $output);
@@ -305,11 +280,36 @@ final class RendererTest extends TestCase
     public function test_multi_select_footer_contains_space_toggle(): void
     {
         $renderer = new Renderer();
-        $state    = $this->makeState(['multi' => true, 'items' => ['A']]);
-        $ctx      = new RenderContext();
+        $state = $this->makeState(['multi' => true, 'items' => ['A']]);
+        $ctx = new RenderContext();
 
-        $output = $this->capture(fn() => $renderer->render($state, $ctx));
+        $output = $this->capture(static fn() => $renderer->render($state, $ctx));
 
         $this->assertStringContainsString('space', $output);
+    }
+
+    // ---------------------------------------------------------------
+    // Helpers
+    // ---------------------------------------------------------------
+
+    private function capture(callable $fn): string
+    {
+        ob_start();
+        $fn();
+
+        return Colors::strip((string) ob_get_clean());
+    }
+
+    private function makeState(array $data = []): State
+    {
+        return new State(array_merge([
+            'question' => 'Choose an item',
+            'search' => '',
+            'index' => 0,
+            'loading' => false,
+            'items' => ['Alpha', 'Beta', 'Gamma', 'Delta'],
+            'selected' => [],
+            'multi' => false,
+        ], $data));
     }
 }

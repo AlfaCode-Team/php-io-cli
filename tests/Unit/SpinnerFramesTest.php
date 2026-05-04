@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace AlfacodeTeam\PhpIoCli\Tests\Unit;
 
 use AlfacodeTeam\PhpIoCli\Depends\SpinnerFrames;
-use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\TestCase;
 
-#[CoversClass(\AlfacodeTeam\PhpIoCli\Depends\SpinnerFrames::class)]
+#[CoversClass(SpinnerFrames::class)]
 final class SpinnerFramesTest extends TestCase
 {
     // ---------------------------------------------------------------
@@ -28,11 +28,11 @@ final class SpinnerFramesTest extends TestCase
     public static function namedStyleProvider(): array
     {
         return [
-            'dots'   => ['dots'],
-            'line'   => ['line'],
-            'bars'   => ['bars'],
-            'pulse'  => ['pulse'],
-            'arc'    => ['arc'],
+            'dots' => ['dots'],
+            'line' => ['line'],
+            'bars' => ['bars'],
+            'pulse' => ['pulse'],
+            'arc' => ['arc'],
             'bounce' => ['bounce'],
         ];
     }
@@ -43,7 +43,7 @@ final class SpinnerFramesTest extends TestCase
 
     public function test_get_unknown_style_returns_default_dots(): void
     {
-        $dots    = SpinnerFrames::get('dots');
+        $dots = SpinnerFrames::get('dots');
         $unknown = SpinnerFrames::get('nonexistent-style');
 
         $this->assertSame($dots, $unknown);
@@ -115,7 +115,7 @@ final class SpinnerFramesTest extends TestCase
         // Bounce has a wider animation loop
         $this->assertGreaterThan(
             count(SpinnerFrames::dots()),
-            count(SpinnerFrames::get('bounce'))
+            count(SpinnerFrames::get('bounce')),
         );
     }
 }

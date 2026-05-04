@@ -36,7 +36,7 @@ function banner(string $title): void
     $line = str_repeat('─', mb_strlen($title) + 4);
     echo PHP_EOL;
     Colors::line("  ┌{$line}┐", Colors::CYAN);
-    Colors::line("  │  " . Colors::wrap($title, Colors::BOLD) . "  │", Colors::CYAN);
+    Colors::line('  │  ' . Colors::wrap($title, Colors::BOLD) . '  │', Colors::CYAN);
     Colors::line("  └{$line}┘", Colors::CYAN);
     echo PHP_EOL;
 }
@@ -65,7 +65,7 @@ function demoTextInput(): void
     $name = (new TextInput('What is your name?'))
         ->placeholder('e.g. Alice')
         ->default('World')
-        ->validate(fn(string $v): ?string => mb_strlen($v) >= 2 ? null : 'Name must be ≥ 2 characters')
+        ->validate(static fn(string $v): string|null => mb_strlen($v) >= 2 ? null : 'Name must be ≥ 2 characters')
         ->run();
 
     result('Name', $name);
@@ -183,9 +183,9 @@ function demoTable(): void
         Table::make()
             ->headers(['Service', 'Status', 'Latency'])
             ->rows([
-                ['api-gateway',    Colors::wrap('healthy',  Colors::GREEN),  '12 ms'],
+                ['api-gateway',    Colors::wrap('healthy', Colors::GREEN),  '12 ms'],
                 ['auth-service',   Colors::wrap('degraded', Colors::YELLOW), '340 ms'],
-                ['payment-worker', Colors::wrap('down',     Colors::RED),    '—'],
+                ['payment-worker', Colors::wrap('down', Colors::RED),    '—'],
             ])
             ->style($style)
             ->render();
@@ -272,7 +272,7 @@ function demoShell(): void
             echo \"OS   : \" . PHP_OS_FAMILY . PHP_EOL;
             echo \"SAPI : \" . php_sapi_name() . PHP_EOL;
         "',
-        tick: fn(string $line) => $spin->tick($line),
+        tick: static fn(string $line) => $spin->tick($line),
     );
 
     if ($result->ok()) {
@@ -291,21 +291,21 @@ function demoShell(): void
 // ── Main menu loop ────────────────────────────────────────────────────────────
 
 $menu = [
-    '1. TextInput'          => 'demoTextInput',
-    '2. NumberInput'        => 'demoNumberInput',
-    '3. Password'           => 'demoPassword',
-    '4. Confirm'            => 'demoConfirm',
-    '5. Select'             => 'demoSelect',
-    '6. MultiSelect'        => 'demoMultiSelect',
-    '7. Autocomplete'       => 'demoAutocomplete',
-    '8. DatePicker'         => 'demoDatePicker',
-    '9. Table'              => 'demoTable',
-    '10. Alert'             => 'demoAlert',
-    '11. ProgressBar'       => 'demoProgressBar',
-    '12. SpinnerComponent'  => 'demoSpinner',
+    '1. TextInput' => 'demoTextInput',
+    '2. NumberInput' => 'demoNumberInput',
+    '3. Password' => 'demoPassword',
+    '4. Confirm' => 'demoConfirm',
+    '5. Select' => 'demoSelect',
+    '6. MultiSelect' => 'demoMultiSelect',
+    '7. Autocomplete' => 'demoAutocomplete',
+    '8. DatePicker' => 'demoDatePicker',
+    '9. Table' => 'demoTable',
+    '10. Alert' => 'demoAlert',
+    '11. ProgressBar' => 'demoProgressBar',
+    '12. SpinnerComponent' => 'demoSpinner',
     '13. Shell Integration' => 'demoShell',
-    '─────────────────'     => null,
-    'Exit'                  => null,
+    '─────────────────' => null,
+    'Exit' => null,
 ];
 
 $choices = array_keys($menu);

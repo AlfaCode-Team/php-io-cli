@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace AlfacodeTeam\PhpIoCli\Tests\Unit;
 
 use AlfacodeTeam\PhpIoCli\NullIO;
-use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
 
-#[CoversClass(\AlfacodeTeam\PhpIoCli\NullIO::class)]
+#[CoversClass(NullIO::class)]
 final class NullIOTest extends TestCase
 {
     private NullIO $io;
@@ -69,7 +69,7 @@ final class NullIOTest extends TestCase
 
     public function test_ask_and_validate_returns_default(): void
     {
-        $result = $this->io->askAndValidate('Name?', fn($v) => $v, null, 'myDefault');
+        $result = $this->io->askAndValidate('Name?', static fn($v) => $v, null, 'myDefault');
 
         $this->assertSame('myDefault', $result);
     }

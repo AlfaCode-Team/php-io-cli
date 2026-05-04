@@ -7,8 +7,8 @@ namespace AlfacodeTeam\PhpIoCli\Tests\Integration;
 use AlfacodeTeam\PhpIoCli\AbstractCommand;
 use AlfacodeTeam\PhpIoCli\BufferIO;
 use AlfacodeTeam\PhpIoCli\CLIApplication;
-use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
 
 // ── Fixtures ─────────────────────────────────────────────────────────────────
 
@@ -16,13 +16,14 @@ final class PingCommand extends AbstractCommand
 {
     protected function configure(): void
     {
-        $this->name        = 'ping';
+        $this->name = 'ping';
         $this->description = 'Returns pong';
     }
 
     protected function handle(): int
     {
         $this->info('pong');
+
         return self::SUCCESS;
     }
 }
@@ -31,7 +32,7 @@ final class GreetCommand extends AbstractCommand
 {
     protected function configure(): void
     {
-        $this->name        = 'greet';
+        $this->name = 'greet';
         $this->description = 'Greet a user';
         $this->addArgument('name', 'User name', required: true);
     }
@@ -39,31 +40,23 @@ final class GreetCommand extends AbstractCommand
     protected function handle(): int
     {
         $this->info('Hello, ' . $this->argument('name') . '!');
+
         return self::SUCCESS;
     }
 }
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
-#[CoversClass(\AlfacodeTeam\PhpIoCli\CLIApplication::class)]
+#[CoversClass(CLIApplication::class)]
 final class CLIApplicationTest extends TestCase
 {
-    private function makeApp(): CLIApplication
-    {
-        $io = new BufferIO();
-
-        return (new CLIApplication('TestApp', '1.0.0'))
-            ->withIO($io)
-            ->add(new PingCommand(), new GreetCommand());
-    }
-
     // ---------------------------------------------------------------
     // Basic dispatch
     // ---------------------------------------------------------------
 
     public function test_runs_matching_command(): void
     {
-        $io  = new BufferIO();
+        $io = new BufferIO();
         $app = (new CLIApplication('TestApp', '1.0.0'))
             ->withIO($io)
             ->add(new PingCommand());
@@ -76,7 +69,7 @@ final class CLIApplicationTest extends TestCase
 
     public function test_command_with_argument(): void
     {
-        $io  = new BufferIO();
+        $io = new BufferIO();
         $app = (new CLIApplication('TestApp', '1.0.0'))
             ->withIO($io)
             ->add(new GreetCommand());
@@ -92,7 +85,7 @@ final class CLIApplicationTest extends TestCase
 
     public function test_version_command_outputs_name_and_version(): void
     {
-        $io  = new BufferIO();
+        $io = new BufferIO();
         $app = (new CLIApplication('MyApp', '2.5.0'))->withIO($io);
 
         $app->run(['version']);
@@ -104,7 +97,7 @@ final class CLIApplicationTest extends TestCase
 
     public function test_list_command_shows_registered_commands(): void
     {
-        $io  = new BufferIO();
+        $io = new BufferIO();
         $app = (new CLIApplication('TestApp', '1.0.0'))
             ->withIO($io)
             ->add(new PingCommand(), new GreetCommand());
@@ -118,7 +111,7 @@ final class CLIApplicationTest extends TestCase
 
     public function test_bare_invocation_shows_list(): void
     {
-        $io  = new BufferIO();
+        $io = new BufferIO();
         $app = (new CLIApplication('TestApp', '1.0.0'))
             ->withIO($io)
             ->add(new PingCommand());
@@ -135,7 +128,7 @@ final class CLIApplicationTest extends TestCase
 
     public function test_unknown_command_returns_invalid(): void
     {
-        $io  = new BufferIO();
+        $io = new BufferIO();
         $app = (new CLIApplication('TestApp', '1.0.0'))->withIO($io);
 
         $exit = $app->run(['nonexistent']);
@@ -176,13 +169,13 @@ final class CLIApplicationTest extends TestCase
 
     public function test_all_returns_registered_commands_sorted(): void
     {
-        $app  = $this->makeApp();
+        $app = $this->makeApp();
         $keys = array_keys($app->all());
 
         // Expect alphabetical order
         $this->assertContains('greet', $keys);
         $this->assertContains('ping', $keys);
-        $this->assertLessThan(array_search('ping', $keys), array_search('greet', $keys));
+        $this->assertLessThan(array_search('ping', $keys, true), array_search('greet', $keys, true));
     }
 
     // ---------------------------------------------------------------
@@ -199,6 +192,7 @@ final class CLIApplicationTest extends TestCase
             {
                 $this->name = 'boom';
             }
+
             protected function handle(): int
             {
                 throw new \RuntimeException('Boom!');
@@ -214,5 +208,14 @@ final class CLIApplicationTest extends TestCase
         $this->expectExceptionMessage('Boom!');
 
         $app->run(['boom']);
+    }
+
+    private function makeApp(): CLIApplication
+    {
+        $io = new BufferIO();
+
+        return (new CLIApplication('TestApp', '1.0.0'))
+            ->withIO($io)
+            ->add(new PingCommand(), new GreetCommand());
     }
 }

@@ -21,13 +21,16 @@ use AlfacodeTeam\PhpIoCli\Depends\Terminal;
 final class SpinnerComponent
 {
     private SpinnerEngine $engine;
-    private bool $running     = false;
-    private float $startTime  = 0.0;
-    private int $lastLines    = 0;
+
+    private bool $running = false;
+
+    private float $startTime = 0.0;
+
+    private int $lastLines = 0;
 
     public function __construct(
         private string $label,
-        string $style = 'dots'
+        string $style = 'dots',
     ) {
         $this->engine = new SpinnerEngine(SpinnerFrames::get($style));
     }
@@ -35,7 +38,7 @@ final class SpinnerComponent
     public function start(): void
     {
         Terminal::hideCursor();
-        $this->running   = true;
+        $this->running = true;
         $this->startTime = microtime(true);
         $this->engine->start();
         $this->draw();
@@ -89,9 +92,9 @@ final class SpinnerComponent
             Terminal::moveCursorUp($this->lastLines);
         }
 
-        $frame   = $this->engine->tick();
+        $frame = $this->engine->tick();
         $elapsed = round(microtime(true) - $this->startTime, 1);
-        $lines   = [];
+        $lines = [];
 
         $lines[] = Colors::wrap($frame . ' ', Colors::CYAN)
                  . Colors::wrap($this->label, Colors::BOLD)

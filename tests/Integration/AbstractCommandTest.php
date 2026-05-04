@@ -6,8 +6,8 @@ namespace AlfacodeTeam\PhpIoCli\Tests\Integration;
 
 use AlfacodeTeam\PhpIoCli\AbstractCommand;
 use AlfacodeTeam\PhpIoCli\BufferIO;
-use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
 
 // ── Fixtures ─────────────────────────────────────────────────────────────────
 
@@ -18,7 +18,7 @@ final class EchoCommand extends AbstractCommand
 {
     protected function configure(): void
     {
-        $this->name        = 'echo';
+        $this->name = 'echo';
         $this->description = 'Echoes back arguments and options';
 
         $this->addArgument('message', 'The message to echo', required: true);
@@ -28,12 +28,12 @@ final class EchoCommand extends AbstractCommand
 
     protected function handle(): int
     {
-        $msg   = (string) $this->argument('message');
+        $msg = (string) $this->argument('message');
         $upper = $this->hasOption('upper');
         $times = (int) $this->option('repeat', '1');
 
         if ($upper) {
-            $msg = strtoupper($msg);
+            $msg = mb_strtoupper($msg);
         }
 
         for ($i = 0; $i < $times; $i++) {
@@ -58,6 +58,7 @@ final class RequiredArgCommand extends AbstractCommand
     protected function handle(): int
     {
         $this->success((string) $this->argument('name'));
+
         return self::SUCCESS;
     }
 }
@@ -91,13 +92,14 @@ final class ExplicitFailCommand extends AbstractCommand
     protected function handle(): int
     {
         $this->error('Explicit failure');
+
         return self::FAILURE;
     }
 }
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
-#[CoversClass(\AlfacodeTeam\PhpIoCli\AbstractCommand::class)]
+#[CoversClass(AbstractCommand::class)]
 final class AbstractCommandTest extends TestCase
 {
     // ---------------------------------------------------------------
@@ -106,7 +108,7 @@ final class AbstractCommandTest extends TestCase
 
     public function test_command_returns_success_code(): void
     {
-        $io  = new BufferIO();
+        $io = new BufferIO();
         $cmd = new EchoCommand();
 
         $exit = $cmd->execute(['hello'], $io);
@@ -116,7 +118,7 @@ final class AbstractCommandTest extends TestCase
 
     public function test_command_outputs_argument(): void
     {
-        $io  = new BufferIO();
+        $io = new BufferIO();
         $cmd = new EchoCommand();
 
         $cmd->execute(['hello world'], $io);
@@ -130,7 +132,7 @@ final class AbstractCommandTest extends TestCase
 
     public function test_long_flag_option_works(): void
     {
-        $io  = new BufferIO();
+        $io = new BufferIO();
         $cmd = new EchoCommand();
 
         $cmd->execute(['hello', '--upper'], $io);
@@ -140,7 +142,7 @@ final class AbstractCommandTest extends TestCase
 
     public function test_short_flag_option_works(): void
     {
-        $io  = new BufferIO();
+        $io = new BufferIO();
         $cmd = new EchoCommand();
 
         $cmd->execute(['hello', '-u'], $io);
@@ -150,25 +152,25 @@ final class AbstractCommandTest extends TestCase
 
     public function test_option_with_value_via_equals(): void
     {
-        $io  = new BufferIO();
+        $io = new BufferIO();
         $cmd = new EchoCommand();
 
         $cmd->execute(['hi', '--repeat=3'], $io);
         $output = $io->getOutput();
 
         // "hi" should appear 3 times
-        $this->assertSame(3, substr_count($output, 'hi'));
+        $this->assertSame(3, mb_substr_count($output, 'hi'));
     }
 
     public function test_option_with_value_via_space(): void
     {
-        $io  = new BufferIO();
+        $io = new BufferIO();
         $cmd = new EchoCommand();
 
         $cmd->execute(['hi', '--repeat', '2'], $io);
         $output = $io->getOutput();
 
-        $this->assertSame(2, substr_count($output, 'hi'));
+        $this->assertSame(2, mb_substr_count($output, 'hi'));
     }
 
     // ---------------------------------------------------------------
@@ -177,7 +179,7 @@ final class AbstractCommandTest extends TestCase
 
     public function test_missing_required_argument_returns_invalid(): void
     {
-        $io  = new BufferIO();
+        $io = new BufferIO();
         $cmd = new RequiredArgCommand();
 
         $exit = $cmd->execute([], $io);
@@ -191,7 +193,7 @@ final class AbstractCommandTest extends TestCase
 
     public function test_unhandled_exception_returns_failure(): void
     {
-        $io  = new BufferIO();
+        $io = new BufferIO();
         $cmd = new FailingCommand();
 
         $exit = $cmd->execute([], $io);
@@ -201,7 +203,7 @@ final class AbstractCommandTest extends TestCase
 
     public function test_explicit_failure_returns_failure_code(): void
     {
-        $io  = new BufferIO();
+        $io = new BufferIO();
         $cmd = new ExplicitFailCommand();
 
         $exit = $cmd->execute([], $io);
@@ -233,7 +235,7 @@ final class AbstractCommandTest extends TestCase
 
     public function test_print_help_does_not_throw(): void
     {
-        $io  = new BufferIO();
+        $io = new BufferIO();
         $cmd = new EchoCommand();
 
         // execute() wires $this->io inside the command; printHelp() uses the

@@ -7,15 +7,20 @@ namespace AlfacodeTeam\PhpIoCli\Depends;
 final class Spinner
 {
     private array $frames;
+
     private int $index = 0;
+
     private float $interval;
+
     private float $lastTick = 0.0;
+
     private bool $running = false;
+
     private string $currentFrame = '';
 
     public function __construct(
-        ?array $frames = null,
-        float $interval = 0.1
+        array|null $frames = null,
+        float $interval = 0.1,
     ) {
         $this->frames = $frames ?? SpinnerFrames::default();
         $this->interval = $interval;

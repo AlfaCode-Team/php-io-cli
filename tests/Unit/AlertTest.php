@@ -6,10 +6,10 @@ namespace AlfacodeTeam\PhpIoCli\Tests\Unit;
 
 use AlfacodeTeam\PhpIoCli\Components\Alert;
 use AlfacodeTeam\PhpIoCli\Depends\Colors;
-use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
 
-#[CoversClass(\AlfacodeTeam\PhpIoCli\Components\Alert::class)]
+#[CoversClass(Alert::class)]
 final class AlertTest extends TestCase
 {
     protected function setUp(): void
@@ -23,30 +23,19 @@ final class AlertTest extends TestCase
     }
 
     // ---------------------------------------------------------------
-    // Helpers
-    // ---------------------------------------------------------------
-
-    private function capture(callable $fn): string
-    {
-        ob_start();
-        $fn();
-        return Colors::strip((string) ob_get_clean());
-    }
-
-    // ---------------------------------------------------------------
     // success
     // ---------------------------------------------------------------
 
     public function test_success_contains_title(): void
     {
-        $output = $this->capture(fn() => Alert::success('Deployment complete!'));
+        $output = $this->capture(static fn() => Alert::success('Deployment complete!'));
 
         $this->assertStringContainsString('Deployment complete!', $output);
     }
 
     public function test_success_contains_checkmark_icon(): void
     {
-        $output = $this->capture(fn() => Alert::success('Done'));
+        $output = $this->capture(static fn() => Alert::success('Done'));
 
         $this->assertStringContainsString('✔', $output);
     }
@@ -54,7 +43,7 @@ final class AlertTest extends TestCase
     public function test_success_renders_body_lines(): void
     {
         $output = $this->capture(
-            fn() => Alert::success('Deployed!', ['Version: 2.4.1', 'Region: eu-west-1'])
+            static fn() => Alert::success('Deployed!', ['Version: 2.4.1', 'Region: eu-west-1']),
         );
 
         $this->assertStringContainsString('Version: 2.4.1', $output);
@@ -63,7 +52,7 @@ final class AlertTest extends TestCase
 
     public function test_success_renders_unicode_box_borders(): void
     {
-        $output = $this->capture(fn() => Alert::success('OK'));
+        $output = $this->capture(static fn() => Alert::success('OK'));
 
         // The alert draws a box with at least one of these border chars
         $hasBorder = str_contains($output, '┌') || str_contains($output, '─') || str_contains($output, '└');
@@ -76,14 +65,14 @@ final class AlertTest extends TestCase
 
     public function test_error_contains_title(): void
     {
-        $output = $this->capture(fn() => Alert::error('Build failed'));
+        $output = $this->capture(static fn() => Alert::error('Build failed'));
 
         $this->assertStringContainsString('Build failed', $output);
     }
 
     public function test_error_contains_x_icon(): void
     {
-        $output = $this->capture(fn() => Alert::error('Build failed'));
+        $output = $this->capture(static fn() => Alert::error('Build failed'));
 
         $this->assertStringContainsString('✘', $output);
     }
@@ -91,7 +80,7 @@ final class AlertTest extends TestCase
     public function test_error_renders_body(): void
     {
         $output = $this->capture(
-            fn() => Alert::error('Build failed', ['Exit code: 1', 'Check logs'])
+            static fn() => Alert::error('Build failed', ['Exit code: 1', 'Check logs']),
         );
 
         $this->assertStringContainsString('Exit code: 1', $output);
@@ -104,14 +93,14 @@ final class AlertTest extends TestCase
 
     public function test_warning_contains_title(): void
     {
-        $output = $this->capture(fn() => Alert::warning('API quota at 80%'));
+        $output = $this->capture(static fn() => Alert::warning('API quota at 80%'));
 
         $this->assertStringContainsString('API quota at 80%', $output);
     }
 
     public function test_warning_contains_exclamation_icon(): void
     {
-        $output = $this->capture(fn() => Alert::warning('Watch out'));
+        $output = $this->capture(static fn() => Alert::warning('Watch out'));
 
         $this->assertStringContainsString('!', $output);
     }
@@ -119,7 +108,7 @@ final class AlertTest extends TestCase
     public function test_warning_renders_body(): void
     {
         $output = $this->capture(
-            fn() => Alert::warning('Low memory', ['Used: 95%', 'Free: 200MB'])
+            static fn() => Alert::warning('Low memory', ['Used: 95%', 'Free: 200MB']),
         );
 
         $this->assertStringContainsString('Used: 95%', $output);
@@ -132,14 +121,14 @@ final class AlertTest extends TestCase
 
     public function test_info_contains_title(): void
     {
-        $output = $this->capture(fn() => Alert::info('New version available: 3.0.0'));
+        $output = $this->capture(static fn() => Alert::info('New version available: 3.0.0'));
 
         $this->assertStringContainsString('New version available: 3.0.0', $output);
     }
 
     public function test_info_contains_i_icon(): void
     {
-        $output = $this->capture(fn() => Alert::info('Note'));
+        $output = $this->capture(static fn() => Alert::info('Note'));
 
         $this->assertStringContainsString('i', $output);
     }
@@ -147,7 +136,7 @@ final class AlertTest extends TestCase
     public function test_info_renders_body(): void
     {
         $output = $this->capture(
-            fn() => Alert::info('Heads up', ['Maintenance tonight 02:00 UTC'])
+            static fn() => Alert::info('Heads up', ['Maintenance tonight 02:00 UTC']),
         );
 
         $this->assertStringContainsString('Maintenance tonight 02:00 UTC', $output);
@@ -160,7 +149,7 @@ final class AlertTest extends TestCase
     public function test_body_as_string_renders_correctly(): void
     {
         $output = $this->capture(
-            fn() => Alert::success('Done', 'Single line body')
+            static fn() => Alert::success('Done', 'Single line body'),
         );
 
         $this->assertStringContainsString('Single line body', $output);
@@ -172,7 +161,7 @@ final class AlertTest extends TestCase
 
     public function test_empty_body_renders_without_separator(): void
     {
-        $output = $this->capture(fn() => Alert::success('Title only'));
+        $output = $this->capture(static fn() => Alert::success('Title only'));
 
         $this->assertStringContainsString('Title only', $output);
         // No body separator (├) should appear when body is empty
@@ -185,7 +174,7 @@ final class AlertTest extends TestCase
 
     public function test_block_contains_uppercased_title(): void
     {
-        $output = $this->capture(fn() => Alert::block('critical error'));
+        $output = $this->capture(static fn() => Alert::block('critical error'));
 
         $this->assertStringContainsString('CRITICAL ERROR', $output);
     }
@@ -193,7 +182,7 @@ final class AlertTest extends TestCase
     public function test_block_renders_body_lines(): void
     {
         $output = $this->capture(
-            fn() => Alert::block('Fatal', ['Check /var/log/app.log'])
+            static fn() => Alert::block('Fatal', ['Check /var/log/app.log']),
         );
 
         $this->assertStringContainsString('Check /var/log/app.log', $output);
@@ -207,7 +196,7 @@ final class AlertTest extends TestCase
     {
         $longLine = str_repeat('x', 120);
 
-        $output = $this->capture(fn() => Alert::info('Wide box', [$longLine]));
+        $output = $this->capture(static fn() => Alert::info('Wide box', [$longLine]));
 
         $this->assertStringContainsString($longLine, $output);
     }
@@ -220,8 +209,20 @@ final class AlertTest extends TestCase
     {
         $colored = Colors::wrap('healthy', Colors::GREEN);
 
-        $output = $this->capture(fn() => Alert::success('Status', [$colored]));
+        $output = $this->capture(static fn() => Alert::success('Status', [$colored]));
 
         $this->assertStringContainsString('healthy', Colors::strip($output));
+    }
+
+    // ---------------------------------------------------------------
+    // Helpers
+    // ---------------------------------------------------------------
+
+    private function capture(callable $fn): string
+    {
+        ob_start();
+        $fn();
+
+        return Colors::strip((string) ob_get_clean());
     }
 }

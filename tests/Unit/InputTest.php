@@ -6,10 +6,10 @@ namespace AlfacodeTeam\PhpIoCli\Tests\Unit;
 
 use AlfacodeTeam\PhpIoCli\Depends\Input;
 use AlfacodeTeam\PhpIoCli\Depends\State;
-use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
 
-#[CoversClass(\AlfacodeTeam\PhpIoCli\Depends\Input::class)]
+#[CoversClass(Input::class)]
 final class InputTest extends TestCase
 {
     // ---------------------------------------------------------------
@@ -22,7 +22,7 @@ final class InputTest extends TestCase
         $state = new State(['count' => 0]);
         $fired = false;
 
-        $input->bind('ENTER', function (State $s) use (&$fired): void {
+        $input->bind('ENTER', static function (State $s) use (&$fired): void {
             $fired = true;
         });
 
@@ -33,11 +33,11 @@ final class InputTest extends TestCase
 
     public function test_handler_receives_state(): void
     {
-        $input    = new Input();
-        $state    = new State(['value' => 'hello']);
+        $input = new Input();
+        $state = new State(['value' => 'hello']);
         $received = null;
 
-        $input->bind('UP', function (State $s) use (&$received): void {
+        $input->bind('UP', static function (State $s) use (&$received): void {
             $received = $s;
         });
 
@@ -65,7 +65,7 @@ final class InputTest extends TestCase
         $input = new Input();
         $state = new State(['confirmed' => null]);
 
-        $input->bind(['y', 'Y'], function (State $s): void {
+        $input->bind(['y', 'Y'], static function (State $s): void {
             $s->confirmed = true;
         });
 
@@ -83,11 +83,11 @@ final class InputTest extends TestCase
 
     public function test_fallback_fires_for_unbound_key(): void
     {
-        $input   = new Input();
-        $state   = new State(['typed' => '']);
+        $input = new Input();
+        $state = new State(['typed' => '']);
         $lastKey = null;
 
-        $input->fallback(function (State $s, string $key) use (&$lastKey): void {
+        $input->fallback(static function (State $s, string $key) use (&$lastKey): void {
             $lastKey = $key;
             $s->typed .= $key;
         });
@@ -101,12 +101,12 @@ final class InputTest extends TestCase
 
     public function test_fallback_does_not_fire_when_binding_exists(): void
     {
-        $input      = new Input();
-        $state      = new State();
+        $input = new Input();
+        $state = new State();
         $fallbackRan = false;
 
-        $input->bind('ENTER', function (State $s): void {});
-        $input->fallback(function (State $s, string $key) use (&$fallbackRan): void {
+        $input->bind('ENTER', static function (State $s): void {});
+        $input->fallback(static function (State $s, string $key) use (&$fallbackRan): void {
             $fallbackRan = true;
         });
 
@@ -123,14 +123,15 @@ final class InputTest extends TestCase
     {
         $input = new Input();
         $state = new State();
-        $log   = [];
+        $log = [];
 
-        $input->bind('UP', function (State $s) use (&$log): false {
+        $input->bind('UP', static function (State $s) use (&$log): false {
             $log[] = 'first';
+
             return false;
         });
 
-        $input->bind('UP', function (State $s) use (&$log): void {
+        $input->bind('UP', static function (State $s) use (&$log): void {
             $log[] = 'second'; // should not run
         });
 
@@ -148,7 +149,7 @@ final class InputTest extends TestCase
         $input = new Input();
         $state = new State(['x' => 0]);
 
-        $input->bind('UP', function (State $s): void {
+        $input->bind('UP', static function (State $s): void {
             $s->x++;
         });
 
@@ -176,7 +177,7 @@ final class InputTest extends TestCase
         $state = new State(['moved' => false]);
 
         // Bind normalized name
-        $input->bind('UP', function (State $s): void {
+        $input->bind('UP', static function (State $s): void {
             $s->moved = true;
         });
 

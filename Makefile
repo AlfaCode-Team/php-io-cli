@@ -50,10 +50,10 @@ stan:
 
 # ── Code style ────────────────────────────────────────────────────────────────
 cs-check:
-	vendor/bin/php-cs-fixer fix --dry-run --diff --config=.php-cs-fixer.php
+	vendor/bin/php-cs-fixer fix --dry-run --diff --allow-unsupported-php-version=yes --config=php-cs-fixer.php
 
 cs-fix:
-	vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.php
+	vendor/bin/php-cs-fixer fix --allow-unsupported-php-version=yes --config=php-cs-fixer.php
 	@printf "\n$(GREEN)✔ Code style fixes applied.$(RESET)\n"
 
 # ── Refactoring ───────────────────────────────────────────────────────────────

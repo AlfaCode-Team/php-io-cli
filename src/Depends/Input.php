@@ -4,23 +4,21 @@ declare(strict_types=1);
 
 namespace AlfacodeTeam\PhpIoCli\Depends;
 
-use Closure;
-
 final class Input
 {
-    /** @var array<string, array<int, Closure>> */
+    /** @var array<string, array<int, \Closure>> */
     private array $bindings = [];
 
-    /** @var Closure|null */
-    private ?Closure $fallback = null;
+    /**  */
+    private \Closure|null $fallback = null;
 
     /**
      * Bind a handler to one or multiple keys.
      *
      * @param string|array<string> $keys
-     * @param Closure(State, string): (void|bool) $handler
+     * @param \Closure(State, string): (void|bool) $handler
      */
-    public function bind(string|array $keys, Closure $handler): self
+    public function bind(string|array $keys, \Closure $handler): self
     {
         foreach ((array) $keys as $key) {
             $this->bindings[$key][] = $handler;
@@ -32,11 +30,12 @@ final class Input
     /**
      * Define what happens if no specific binding matches the key.
      *
-     * @param Closure(State, string): void $handler
+     * @param \Closure(State, string): void $handler
      */
-    public function fallback(Closure $handler): self
+    public function fallback(\Closure $handler): self
     {
         $this->fallback = $handler;
+
         return $this;
     }
 
@@ -48,6 +47,7 @@ final class Input
         foreach ((array) $keys as $key) {
             unset($this->bindings[$key]);
         }
+
         return $this;
     }
 
@@ -69,6 +69,7 @@ final class Input
                     break;
                 }
             }
+
             return;
         }
 

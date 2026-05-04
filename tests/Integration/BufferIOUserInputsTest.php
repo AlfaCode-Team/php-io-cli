@@ -6,8 +6,8 @@ namespace AlfacodeTeam\PhpIoCli\Tests\Integration;
 
 use AlfacodeTeam\PhpIoCli\AbstractCommand;
 use AlfacodeTeam\PhpIoCli\BufferIO;
-use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
 
 // ── Fixtures ─────────────────────────────────────────────────────────────────
 
@@ -16,9 +16,17 @@ use PHPUnit\Framework\Attributes\CoversClass;
  */
 final class ConfirmCommand extends AbstractCommand
 {
+    // Expose the IO so we can call it directly in the fixture
+    private \AlfacodeTeam\PhpIoCli\IOInterface|null $ioRef = null;
+
+    public function setIORef(\AlfacodeTeam\PhpIoCli\IOInterface $io): void
+    {
+        $this->ioRef = $io;
+    }
+
     protected function configure(): void
     {
-        $this->name        = 'confirm-cmd';
+        $this->name = 'confirm-cmd';
         $this->description = 'Asks a yes/no question';
     }
 
@@ -35,14 +43,6 @@ final class ConfirmCommand extends AbstractCommand
         return self::SUCCESS;
     }
 
-    // Expose the IO so we can call it directly in the fixture
-    private ?\AlfacodeTeam\PhpIoCli\IOInterface $ioRef = null;
-
-    public function setIORef(\AlfacodeTeam\PhpIoCli\IOInterface $io): void
-    {
-        $this->ioRef = $io;
-    }
-
     private function io(): \AlfacodeTeam\PhpIoCli\IOInterface
     {
         // AbstractCommand stores IO internally; we replicate via reflection
@@ -54,6 +54,7 @@ final class ConfirmCommand extends AbstractCommand
         }
         $prop = $parent->getProperty('io');
         $prop->setAccessible(true);
+
         return $prop->getValue($this);
     }
 }
@@ -65,7 +66,7 @@ final class SelectCommand extends AbstractCommand
 {
     protected function configure(): void
     {
-        $this->name        = 'select-cmd';
+        $this->name = 'select-cmd';
         $this->description = 'Asks the user to pick an environment';
     }
 
@@ -74,7 +75,7 @@ final class SelectCommand extends AbstractCommand
         $choice = $this->ioInstance()->select(
             'Pick environment',
             ['production', 'staging', 'development'],
-            'staging'
+            'staging',
         );
 
         $this->info("Selected: {$choice}");
@@ -84,13 +85,14 @@ final class SelectCommand extends AbstractCommand
 
     private function ioInstance(): \AlfacodeTeam\PhpIoCli\IOInterface
     {
-        $ref    = new \ReflectionObject($this);
+        $ref = new \ReflectionObject($this);
         $parent = $ref->getParentClass();
         if ($parent === false) {
             throw new \RuntimeException('No parent');
         }
         $prop = $parent->getProperty('io');
         $prop->setAccessible(true);
+
         return $prop->getValue($this);
     }
 }
@@ -102,15 +104,15 @@ final class MultiPromptCommand extends AbstractCommand
 {
     protected function configure(): void
     {
-        $this->name        = 'multi-prompt';
+        $this->name = 'multi-prompt';
         $this->description = 'Multiple prompts in sequence';
     }
 
     protected function handle(): int
     {
-        $io   = $this->ioInstance();
+        $io = $this->ioInstance();
         $name = $io->ask('What is your name?', 'World');
-        $ok   = $io->askConfirmation("Hello {$name}, continue?", true);
+        $ok = $io->askConfirmation("Hello {$name}, continue?", true);
 
         if ($ok) {
             $this->info("Hello, {$name}!");
@@ -123,20 +125,21 @@ final class MultiPromptCommand extends AbstractCommand
 
     private function ioInstance(): \AlfacodeTeam\PhpIoCli\IOInterface
     {
-        $ref    = new \ReflectionObject($this);
+        $ref = new \ReflectionObject($this);
         $parent = $ref->getParentClass();
         if ($parent === false) {
             throw new \RuntimeException('No parent');
         }
         $prop = $parent->getProperty('io');
         $prop->setAccessible(true);
+
         return $prop->getValue($this);
     }
 }
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
-#[CoversClass(\AlfacodeTeam\PhpIoCli\BufferIO::class)]
+#[CoversClass(BufferIO::class)]
 final class BufferIOUserInputsTest extends TestCase
 {
     // ---------------------------------------------------------------
@@ -148,7 +151,7 @@ final class BufferIOUserInputsTest extends TestCase
         $io = new BufferIO();
         $io->setUserInputs(['yes']);
 
-        $cmd  = new ConfirmCommand();
+        $cmd = new ConfirmCommand();
         $exit = $cmd->execute([], $io);
 
         $this->assertSame(AbstractCommand::SUCCESS, $exit);
@@ -164,7 +167,7 @@ final class BufferIOUserInputsTest extends TestCase
         $io = new BufferIO();
         $io->setUserInputs(['no']);
 
-        $cmd  = new ConfirmCommand();
+        $cmd = new ConfirmCommand();
         $exit = $cmd->execute([], $io);
 
         $this->assertSame(AbstractCommand::SUCCESS, $exit);
@@ -181,7 +184,7 @@ final class BufferIOUserInputsTest extends TestCase
         // Symfony ChoiceQuestion accepts the option value as input
         $io->setUserInputs(['staging']);
 
-        $cmd  = new SelectCommand();
+        $cmd = new SelectCommand();
         $exit = $cmd->execute([], $io);
 
         $this->assertSame(AbstractCommand::SUCCESS, $exit);
@@ -197,7 +200,7 @@ final class BufferIOUserInputsTest extends TestCase
         $io = new BufferIO();
         $io->setUserInputs(['1']); // index 1 → 'staging'
 
-        $cmd  = new SelectCommand();
+        $cmd = new SelectCommand();
         $exit = $cmd->execute([], $io);
 
         $this->assertSame(AbstractCommand::SUCCESS, $exit);
@@ -213,7 +216,7 @@ final class BufferIOUserInputsTest extends TestCase
         $io = new BufferIO();
         $io->setUserInputs(['Alice', 'yes']);
 
-        $cmd  = new MultiPromptCommand();
+        $cmd = new MultiPromptCommand();
         $exit = $cmd->execute([], $io);
 
         $this->assertSame(AbstractCommand::SUCCESS, $exit);
@@ -225,7 +228,7 @@ final class BufferIOUserInputsTest extends TestCase
         $io = new BufferIO();
         $io->setUserInputs(['Bob', 'no']);
 
-        $cmd  = new MultiPromptCommand();
+        $cmd = new MultiPromptCommand();
         $exit = $cmd->execute([], $io);
 
         $this->assertSame(AbstractCommand::SUCCESS, $exit);

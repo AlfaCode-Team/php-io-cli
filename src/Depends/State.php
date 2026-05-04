@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace AlfacodeTeam\PhpIoCli\Depends;
 
-use Closure;
-
 /**
  * Reactive State Container.
  * Handles data storage, property watching, and CLI-specific state mutations.
@@ -15,7 +13,7 @@ final class State
     /** @var array<string, mixed> */
     private array $data = [];
 
-    /** @var array<string, array<int, Closure>> */
+    /** @var array<string, array<int, \Closure>> */
     private array $watchers = [];
 
     public function __construct(array $initialData = [])
@@ -94,7 +92,7 @@ final class State
     public function toggle(string $key, mixed $value): void
     {
         $current = (array) $this->get($key, []);
-        $index   = array_search($value, $current, true);
+        $index = array_search($value, $current, true);
 
         if ($index === false) {
             $current[] = $value;
@@ -122,18 +120,19 @@ final class State
 
         return array_filter(
             $items,
-            fn($item) => mb_stripos((string) $item, $search) !== false
+            static fn($item) => mb_stripos((string) $item, $search) !== false,
         );
     }
 
     /* --- Reactivity --- */
 
     /**
-     * @param Closure(mixed $new, mixed $old, self $state): void $callback
+     * @param \Closure(mixed $new, mixed $old, self $state): void $callback
      */
-    public function watch(string $key, Closure $callback): self
+    public function watch(string $key, \Closure $callback): self
     {
         $this->watchers[$key][] = $callback;
+
         return $this;
     }
 

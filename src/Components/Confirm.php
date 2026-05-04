@@ -18,7 +18,7 @@ final class Confirm extends Component
 
     public function __construct(
         private string $question,
-        private bool $default = true
+        private bool $default = true,
     ) {
         parent::__construct();
     }
@@ -27,9 +27,9 @@ final class Confirm extends Component
     {
         $this->state->confirmed = $this->default;
 
-        $this->input->bind(['y', 'Y'], fn($s) => $s->confirmed = true);
-        $this->input->bind(['n', 'N'], fn($s) => $s->confirmed = false);
-        $this->input->bind(['LEFT', 'RIGHT'], fn($s) => $s->confirmed = !$s->confirmed);
+        $this->input->bind(['y', 'Y'], static fn($s) => $s->confirmed = true);
+        $this->input->bind(['n', 'N'], static fn($s) => $s->confirmed = false);
+        $this->input->bind(['LEFT', 'RIGHT'], static fn($s) => $s->confirmed = !$s->confirmed);
         $this->input->bind('ENTER', fn() => $this->stop());
     }
 
@@ -42,7 +42,7 @@ final class Confirm extends Component
         $active = $this->state->confirmed;
 
         $yes = $active ? Colors::wrap(' Yes ', [Colors::BG_CYAN, Colors::BLACK]) : Colors::wrap(' Yes ', Colors::GRAY);
-        $no  = !$active ? Colors::wrap(' No ', [Colors::BG_CYAN, Colors::BLACK]) : Colors::wrap(' No ', Colors::GRAY);
+        $no = !$active ? Colors::wrap(' No ', [Colors::BG_CYAN, Colors::BLACK]) : Colors::wrap(' No ', Colors::GRAY);
 
         $lines = [
             Colors::wrap('? ', Colors::CYAN) . Colors::wrap($this->question, Colors::BOLD),

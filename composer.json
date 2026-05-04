@@ -61,8 +61,8 @@
     "phpstan":           "phpstan analyse --memory-limit=256M",
     "stan":              "@phpstan",
 
-    "cs-check":          "php-cs-fixer fix --dry-run --diff --config=.php-cs-fixer.php",
-    "cs-fix":            "php-cs-fixer fix --config=.php-cs-fixer.php",
+    "cs-check":          "php-cs-fixer fix --dry-run --diff --allow-unsupported-php-version=yes --config=php-cs-fixer.php",
+    "cs-fix":            "php-cs-fixer fix --allow-unsupported-php-version=yes --config=php-cs-fixer.php",
 
     "refactor":          "rector process",
     "mutation":          "infection --threads=max --min-msi=60 --min-covered-msi=80",

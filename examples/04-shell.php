@@ -24,19 +24,19 @@ Colors::line("\n  php-io-cli — Shell Integration Demo\n", [Colors::BOLD, Color
 
 // ── Example 1: Shell::capture (quick value read) ───────────────────
 
-Colors::line("  1. Shell::capture — read a value", Colors::BOLD);
+Colors::line('  1. Shell::capture — read a value', Colors::BOLD);
 
 $phpVersion = Shell::capture('php --version');
 $gitVersion = Shell::capture('git --version');
 
 echo PHP_EOL;
-Colors::line("    PHP: " . explode("\n", (string) $phpVersion)[0], Colors::GREEN);
-Colors::line("    Git: " . (string) $gitVersion, Colors::GREEN);
+Colors::line('    PHP: ' . explode("\n", (string) $phpVersion)[0], Colors::GREEN);
+Colors::line('    Git: ' . (string) $gitVersion, Colors::GREEN);
 echo PHP_EOL;
 
 // ── Example 2: Shell::run with SpinnerComponent ────────────────────
 
-Colors::line("  2. Shell::run with SpinnerComponent", Colors::BOLD);
+Colors::line('  2. Shell::run with SpinnerComponent', Colors::BOLD);
 echo PHP_EOL;
 
 $spin = new SpinnerComponent('Listing /tmp directory', 'dots');
@@ -44,14 +44,14 @@ $spin->start();
 
 $result = Shell::run(
     'ls -la /tmp 2>&1 | head -20',
-    tick: function (string $lastLine) use ($spin): void {
+    tick: static function (string $lastLine) use ($spin): void {
         $spin->tick($lastLine);
-    }
+    },
 );
 
 if ($result->ok()) {
     $spin->stop('Directory listing complete');
-    Colors::line("  Output lines: " . count($result->stdout), Colors::GREEN);
+    Colors::line('  Output lines: ' . count($result->stdout), Colors::GREEN);
 } else {
     $spin->fail('Command failed');
     Alert::error('Shell error', $result->meaningfulErrors());
@@ -61,7 +61,7 @@ echo PHP_EOL;
 
 // ── Example 3: Shell::run with ProgressBar (multi-step) ────────────
 
-Colors::line("  3. Multi-step pipeline with ProgressBar", Colors::BOLD);
+Colors::line('  3. Multi-step pipeline with ProgressBar', Colors::BOLD);
 echo PHP_EOL;
 
 $steps = [
@@ -80,7 +80,7 @@ $allPassed = true;
 foreach ($steps as [$label, $command]) {
     $stepResult = Shell::run(
         $command,
-        tick: fn() => $bar->advance(0) // redraw without advancing
+        tick: static fn() => $bar->advance(0), // redraw without advancing
     );
 
     if ($stepResult->failed()) {
@@ -97,7 +97,7 @@ echo PHP_EOL;
 
 // ── Example 4: Error handling ──────────────────────────────────────
 
-Colors::line("  4. Error handling", Colors::BOLD);
+Colors::line('  4. Error handling', Colors::BOLD);
 echo PHP_EOL;
 
 $spin2 = new SpinnerComponent('Running a command that fails', 'arc');
@@ -121,5 +121,5 @@ if ($failResult->failed()) {
 }
 
 echo PHP_EOL;
-Colors::line("  Shell integration demo complete!", [Colors::BOLD, Colors::GREEN]);
+Colors::line('  Shell integration demo complete!', [Colors::BOLD, Colors::GREEN]);
 echo PHP_EOL;

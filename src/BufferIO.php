@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace AlfacodeTeam\PhpIoCli;
 
-use Symfony\Component\Console\Helper\QuestionHelper;
-use Symfony\Component\Console\Output\StreamOutput;
+use AlfacodeTeam\PhpIoCli\Depends\Colors;
 use Symfony\Component\Console\Formatter\OutputFormatterInterface;
+use Symfony\Component\Console\Helper\HelperSet;
+use Symfony\Component\Console\Helper\QuestionHelper;
 use Symfony\Component\Console\Input\StreamableInputInterface;
 use Symfony\Component\Console\Input\StringInput;
-use Symfony\Component\Console\Helper\HelperSet;
-use AlfacodeTeam\PhpIoCli\Depends\Colors;
+use Symfony\Component\Console\Output\StreamOutput;
 
 /**
  * Captures CLI output in memory for testing and allows simulated user input.
@@ -20,7 +20,7 @@ class BufferIO extends ConsoleIO
     public function __construct(
         string $input = '',
         int $verbosity = StreamOutput::VERBOSITY_NORMAL,
-        ?OutputFormatterInterface $formatter = null
+        OutputFormatterInterface|null $formatter = null,
     ) {
         $inputInstance = new StringInput($input);
         $inputInstance->setInteractive(false);
@@ -54,20 +54,6 @@ class BufferIO extends ConsoleIO
     }
 
     /**
-     * Handles the cleanup of backspace characters (\x08)
-     */
-    private function cleanBackspaces(string $output): string
-    {
-        return (string) preg_replace_callback("{(?<=^|\n|\x08)(.+?)(\x08+)}", static function ($matches): string {
-            $pre = strip_tags($matches[1]);
-            if (strlen($pre) === strlen($matches[2])) {
-                return '';
-            }
-            return rtrim($matches[1]) . "\n";
-        }, $output);
-    }
-
-    /**
      * Simulated interaction for testing prompts.
      *
      * @param string[] $inputs Array of keys/strings to "type"
@@ -81,6 +67,21 @@ class BufferIO extends ConsoleIO
 
         $this->input->setStream($this->createStream($inputs));
         $this->input->setInteractive(true);
+    }
+
+    /**
+     * Handles the cleanup of backspace characters (\x08)
+     */
+    private function cleanBackspaces(string $output): string
+    {
+        return (string) preg_replace_callback("{(?<=^|\n|\x08)(.+?)(\x08+)}", static function ($matches): string {
+            $pre = strip_tags($matches[1]);
+            if (mb_strlen($pre) === mb_strlen($matches[2])) {
+                return '';
+            }
+
+            return mb_rtrim($matches[1]) . "\n";
+        }, $output);
     }
 
     /**

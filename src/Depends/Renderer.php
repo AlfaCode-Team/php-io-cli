@@ -13,12 +13,19 @@ use AlfacodeTeam\PhpIoCli\IRenderer;
 final class Renderer implements IRenderer
 {
     private int $lastLines = 0;
+
     private Spinner $spinner;
+
     private bool $cursorHidden = false;
 
     public function __construct()
     {
         $this->spinner = new Spinner();
+    }
+
+    public function __destruct()
+    {
+        echo "\033[?25h";
     }
 
     /* =========================================================
@@ -75,7 +82,7 @@ final class Renderer implements IRenderer
 
     public function key(): string
     {
-        return static::class;
+        return self::class;
     }
 
     /* =========================================================
@@ -99,6 +106,7 @@ final class Renderer implements IRenderer
             $this->spinner->start();
             $lines[] = Colors::wrap('  ' . $this->spinner->tick() . ' Loading...', Colors::CYAN);
             $this->display($lines);
+
             return;
         }
 
@@ -110,6 +118,7 @@ final class Renderer implements IRenderer
         if (empty($filtered)) {
             $lines[] = Colors::wrap('  ✘ No results found.', Colors::RED);
             $this->display($lines);
+
             return;
         }
 
@@ -118,19 +127,19 @@ final class Renderer implements IRenderer
         ===================================================== */
         $windowSize = 10;
         $totalItems = count($filtered);
-        $index      = (int) ($state->index ?? 0);
+        $index = (int) ($state->index ?? 0);
 
         $start = (int) max(0, min($index - (int) floor($windowSize / 2), $totalItems - $windowSize));
-        $end   = (int) min($totalItems, $start + $windowSize);
+        $end = (int) min($totalItems, $start + $windowSize);
 
         $lines[] = ($start > 0) ? Colors::wrap('   ↑ more items', Colors::GRAY) : ' ';
 
         foreach (array_values(array_slice($filtered, $start, $windowSize)) as $i => $label) {
-            $realIndex  = $start + $i;
-            $isActive   = $realIndex === $index;
+            $realIndex = $start + $i;
+            $isActive = $realIndex === $index;
             $isSelected = in_array($label, (array) ($state->selected ?? []), true);
 
-            $pointer  = $isActive ? Colors::wrap('›', Colors::GREEN) : ' ';
+            $pointer = $isActive ? Colors::wrap('›', Colors::GREEN) : ' ';
             $checkbox = '';
 
             if ($state->multi ?? false) {
@@ -152,7 +161,7 @@ final class Renderer implements IRenderer
 
         // FOOTER
         $lines[] = '';
-        $help    = ($state->multi ?? false)
+        $help = ($state->multi ?? false)
             ? '↑↓ nav • space toggle • enter confirm'
             : '↑↓ nav • enter confirm';
         $lines[] = Colors::wrap($help, Colors::GRAY);
@@ -169,10 +178,5 @@ final class Renderer implements IRenderer
 
         echo $output;
         $this->lastLines = count($lines);
-    }
-
-    public function __destruct()
-    {
-        echo "\033[?25h";
     }
 }

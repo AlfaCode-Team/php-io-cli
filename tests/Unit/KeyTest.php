@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace AlfacodeTeam\PhpIoCli\Tests\Unit;
 
 use AlfacodeTeam\PhpIoCli\Depends\Key;
-use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\TestCase;
 
-#[CoversClass(\AlfacodeTeam\PhpIoCli\Depends\Key::class)]
+#[CoversClass(Key::class)]
 final class KeyTest extends TestCase
 {
     // ---------------------------------------------------------------
@@ -25,21 +25,21 @@ final class KeyTest extends TestCase
     public static function escapeSequenceProvider(): array
     {
         return [
-            'arrow up'        => ["\e[A",   'UP'],
-            'arrow down'      => ["\e[B",   'DOWN'],
-            'arrow right'     => ["\e[C",   'RIGHT'],
-            'arrow left'      => ["\e[D",   'LEFT'],
-            'home'            => ["\e[H",   'HOME'],
-            'end'             => ["\e[F",   'END'],
+            'arrow up' => ["\e[A",   'UP'],
+            'arrow down' => ["\e[B",   'DOWN'],
+            'arrow right' => ["\e[C",   'RIGHT'],
+            'arrow left' => ["\e[D",   'LEFT'],
+            'home' => ["\e[H",   'HOME'],
+            'end' => ["\e[F",   'END'],
             'enter (newline)' => ["\n",     'ENTER'],
             'enter (carriage)' => ["\r",     'ENTER'],
-            'tab'             => ["\t",     'TAB'],
-            'esc'             => ["\e",     'ESC'],
+            'tab' => ["\t",     'TAB'],
+            'esc' => ["\e",     'ESC'],
             'backspace (del)' => ["\x7f",   'BACKSPACE'],
-            'backspace (bs)'  => ["\x08",   'BACKSPACE'],
+            'backspace (bs)' => ["\x08",   'BACKSPACE'],
             'delete sequence' => ["\e[3~",  'DELETE'],
-            'ctrl+c'          => ["\x03",   'CTRL_C'],
-            'ctrl+d'          => ["\x04",   'CTRL_D'],
+            'ctrl+c' => ["\x03",   'CTRL_C'],
+            'ctrl+d' => ["\x04",   'CTRL_D'],
         ];
     }
 
@@ -73,11 +73,11 @@ final class KeyTest extends TestCase
         return [
             'lowercase a' => ['a'],
             'uppercase A' => ['A'],
-            'digit 0'     => ['0'],
-            'space'       => [' '],
+            'digit 0' => ['0'],
+            'space' => [' '],
             'exclamation' => ['!'],
-            'at sign'     => ['@'],
-            'tilde'       => ['~'],
+            'at sign' => ['@'],
+            'tilde' => ['~'],
         ];
     }
 
@@ -90,12 +90,12 @@ final class KeyTest extends TestCase
     public static function nonPrintableCharProvider(): array
     {
         return [
-            'null byte'       => ["\x00"],
-            'ctrl+c'          => ["\x03"],
-            'backspace'       => ["\x7f"],
+            'null byte' => ["\x00"],
+            'ctrl+c' => ["\x03"],
+            'backspace' => ["\x7f"],
             'escape sequence' => ["\e[A"],
-            'newline'         => ["\n"],
-            'tab'             => ["\t"],
+            'newline' => ["\n"],
+            'tab' => ["\t"],
         ];
     }
 

@@ -16,7 +16,9 @@ use AlfacodeTeam\PhpIoCli\Depends\Terminal;
 final class TextInput extends Component
 {
     private string $placeholder = '';
+
     private string $defaultValue = '';
+
     private int $lastLines = 0;
 
     /** @var (callable(string): ?string)|null */
@@ -25,26 +27,6 @@ final class TextInput extends Component
     public function __construct(private string $question)
     {
         parent::__construct();
-    }
-
-    /* --- Fluent Builders --- */
-
-    public function placeholder(string $text): self
-    {
-        $this->placeholder = $text;
-        return $this;
-    }
-
-    public function default(string $value): self
-    {
-        $this->defaultValue = $value;
-        return $this;
-    }
-
-    public function validate(callable $validator): self
-    {
-        $this->validator = $validator;
-        return $this;
     }
 
     /* =========================================================
@@ -61,7 +43,7 @@ final class TextInput extends Component
         ]);
 
         // Key: Typing
-        $this->input->fallback(function (State|string $state, string $key): void {
+        $this->input->fallback(static function (State|string $state, string $key): void {
             if (Key::isPrintable($key)) {
                 $cur = (int) $state->cursor;
                 $value = (string) $state->value;
@@ -72,17 +54,17 @@ final class TextInput extends Component
         });
 
         // Key: Navigation
-        $this->input->bind('LEFT', fn(State|string $s) => $s->decrement('cursor'));
-        $this->input->bind('RIGHT', fn(State|string $s) => $s->increment('cursor', mb_strlen((string) $s->value)));
-        $this->input->bind('HOME', function (State|string $s): void {
+        $this->input->bind('LEFT', static fn(State|string $s) => $s->decrement('cursor'));
+        $this->input->bind('RIGHT', static fn(State|string $s) => $s->increment('cursor', mb_strlen((string) $s->value)));
+        $this->input->bind('HOME', static function (State|string $s): void {
             $s->cursor = 0;
         });
-        $this->input->bind('END', function (State|string $s): void {
+        $this->input->bind('END', static function (State|string $s): void {
             $s->cursor = mb_strlen((string) $s->value);
         });
 
         // Key: Deletion
-        $this->input->bind('BACKSPACE', function (State|string $state): void {
+        $this->input->bind('BACKSPACE', static function (State|string $state): void {
             $cur = (int) $state->cursor;
             if ($cur === 0) {
                 return;
@@ -92,7 +74,7 @@ final class TextInput extends Component
             $state->error = null;
         });
 
-        $this->input->bind('DELETE', function (State|string $state): void {
+        $this->input->bind('DELETE', static function (State|string $state): void {
             $cur = (int) $state->cursor;
             $value = (string) $state->value;
             if ($cur >= mb_strlen($value)) {
@@ -114,6 +96,7 @@ final class TextInput extends Component
                 $err = ($this->validator)($value);
                 if ($err !== null) {
                     $state->error = $err;
+
                     return;
                 }
             }
@@ -121,6 +104,29 @@ final class TextInput extends Component
             $state->done = true;
             $this->stop();
         });
+    }
+
+    /* --- Fluent Builders --- */
+
+    public function placeholder(string $text): self
+    {
+        $this->placeholder = $text;
+
+        return $this;
+    }
+
+    public function default(string $value): self
+    {
+        $this->defaultValue = $value;
+
+        return $this;
+    }
+
+    public function validate(callable $validator): self
+    {
+        $this->validator = $validator;
+
+        return $this;
     }
 
     /* =========================================================
@@ -202,6 +208,7 @@ final class TextInput extends Component
     public function resolve(): mixed
     {
         $value = (string) $this->state->value;
+
         return ($value !== '') ? $value : $this->defaultValue;
     }
 }

@@ -6,7 +6,7 @@ namespace AlfacodeTeam\PhpIoCli\Depends;
 
 /**
  * Enterprise Shell Wrapper
- * 
+ *
  * v1-> Features
  * ─────────
  * • Streams stdout AND stderr simultaneously with stream_select() so neither
@@ -15,12 +15,12 @@ namespace AlfacodeTeam\PhpIoCli\Depends;
  *   caller can animate a SpinnerComponent with the most recent output line.
  * • Merges caller-supplied env vars over the current process environment.
  * • Returns an immutable ShellResult value object.
- * 
+ *
  * Features:
  * - Deadlock-free simultaneous stdout/stderr streaming.
  * - Non-blocking stream_select for high-performance UI ticks.
  * - Guaranteed capture of partial trailing lines (fixes test failures).
- * 
+ *
  * Usage with SpinnerComponent
  * ───────────────────────────
  *   $spin = new SpinnerComponent('Running git …');
@@ -53,9 +53,9 @@ final class Shell
      */
     public static function run(
         string   $command,
-        ?callable $tick  = null,
-        array    $env    = [],
-        string   $cwd    = '',
+        callable|null $tick = null,
+        array    $env = [],
+        string   $cwd = '',
     ): ShellResult {
         $descriptors = [
             0 => ['pipe', 'r'], // stdin
@@ -64,14 +64,14 @@ final class Shell
         ];
 
         // Ensure environment variables are preserved and merged
-        $fullEnv = array_merge((array)(getenv() ?: []), $env);
+        $fullEnv = array_merge((array) (getenv() ?: []), $env);
 
         $process = proc_open(
             $command,
             $descriptors,
             $pipes,
             $cwd !== '' ? $cwd : null,
-            $fullEnv
+            $fullEnv,
         );
 
         if (!is_resource($process)) {
@@ -120,18 +120,18 @@ final class Shell
             }
 
             // --- Process complete lines for STDOUT ---
-            while (($pos = strpos($stdoutBuf, "\n")) !== false) {
-                $line = rtrim(substr($stdoutBuf, 0, $pos));
-                $stdoutBuf = substr($stdoutBuf, $pos + 1);
+            while (($pos = mb_strpos($stdoutBuf, "\n")) !== false) {
+                $line = mb_rtrim(mb_substr($stdoutBuf, 0, $pos));
+                $stdoutBuf = mb_substr($stdoutBuf, $pos + 1);
                 $stdout[] = $line;
                 $lastLine = $line;
                 $lastIsStderr = false;
             }
 
             // --- Process complete lines for STDERR ---
-            while (($pos = strpos($stderrBuf, "\n")) !== false) {
-                $line = rtrim(substr($stderrBuf, 0, $pos));
-                $stderrBuf = substr($stderrBuf, $pos + 1);
+            while (($pos = mb_strpos($stderrBuf, "\n")) !== false) {
+                $line = mb_rtrim(mb_substr($stderrBuf, 0, $pos));
+                $stderrBuf = mb_substr($stderrBuf, $pos + 1);
                 $stderr[] = $line;
                 $lastLine = $line;
                 $lastIsStderr = true;
@@ -150,12 +150,12 @@ final class Shell
 
         // --- Final Flush ---
         // Capture any remaining data that didn't end with a newline (Critical for tests!)
-        if (($trimmed = rtrim($stdoutBuf)) !== '') {
+        if (($trimmed = mb_rtrim($stdoutBuf)) !== '') {
             $stdout[] = $trimmed;
             $lastLine = $trimmed;
             $lastIsStderr = false;
         }
-        if (($trimmed = rtrim($stderrBuf)) !== '') {
+        if (($trimmed = mb_rtrim($stderrBuf)) !== '') {
             $stderr[] = $trimmed;
             $lastLine = $trimmed;
             $lastIsStderr = true;
@@ -177,9 +177,10 @@ final class Shell
     /**
      * Run and return trimmed stdout. Returns null on failure.
      */
-    public static function capture(string $command, string $cwd = ''): ?string
+    public static function capture(string $command, string $cwd = ''): string|null
     {
         $result = self::run($command, cwd: $cwd);
-        return $result->ok() ? trim($result->output()) : null;
+
+        return $result->ok() ? mb_trim($result->output()) : null;
     }
 }

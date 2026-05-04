@@ -6,16 +6,15 @@ namespace AlfacodeTeam\PhpIoCli\Tests\Integration;
 
 use AlfacodeTeam\PhpIoCli\Depends\Shell;
 use AlfacodeTeam\PhpIoCli\Depends\ShellResult;
-use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
 
 /**
- *
  * All commands used here are safe, cross-platform, read-only operations.
  * We favour `php -r` and `printf` so the suite passes on both Unix and
  * Linux-based CI without relying on shell builtins that may differ.
  */
-#[CoversClass(\AlfacodeTeam\PhpIoCli\Depends\Shell::class)]
+#[CoversClass(Shell::class)]
 final class ShellTest extends TestCase
 {
     // ---------------------------------------------------------------
@@ -94,9 +93,9 @@ final class ShellTest extends TestCase
 
         Shell::run(
             'php -r "echo \"tick test\";"',
-            tick: function (string $lastLine, bool $isStderr) use (&$ticked): void {
+            tick: static function (string $lastLine, bool $isStderr) use (&$ticked): void {
                 $ticked = true;
-            }
+            },
         );
 
         $this->assertTrue($ticked, 'tick callback must be called at least once');
@@ -108,11 +107,11 @@ final class ShellTest extends TestCase
 
         Shell::run(
             'php -r "echo \"abc\ndef\";"',
-            tick: function (string $lastLine) use (&$receivedLines): void {
+            tick: static function (string $lastLine) use (&$receivedLines): void {
                 if ($lastLine !== '') {
                     $receivedLines[] = $lastLine;
                 }
-            }
+            },
         );
 
         // At least one of the lines should have been surfaced in the tick
@@ -127,7 +126,7 @@ final class ShellTest extends TestCase
     {
         $result = Shell::run(
             'php -r "echo getenv(\'MY_TEST_VAR\');"',
-            env: ['MY_TEST_VAR' => 'hello-from-env']
+            env: ['MY_TEST_VAR' => 'hello-from-env'],
         );
 
         $this->assertTrue($result->ok());
@@ -140,14 +139,14 @@ final class ShellTest extends TestCase
 
     public function test_run_respects_cwd(): void
     {
-        $cwd    = sys_get_temp_dir();
+        $cwd = sys_get_temp_dir();
         $result = Shell::run('php -r "echo getcwd();"', cwd: $cwd);
 
         $this->assertTrue($result->ok());
         // Resolve symlinks to handle /var → /private/var on macOS
         $this->assertSame(
             realpath($cwd),
-            realpath(trim($result->output()))
+            realpath(mb_trim($result->output())),
         );
     }
 
