@@ -7,6 +7,7 @@ namespace AlfacodeTeam\PhpIoCli\Tests\Integration;
 use AlfacodeTeam\PhpIoCli\AbstractCommand;
 use AlfacodeTeam\PhpIoCli\BufferIO;
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
 
 // ── Fixtures ─────────────────────────────────────────────────────────────────
 
@@ -96,9 +97,7 @@ final class ExplicitFailCommand extends AbstractCommand
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
-/**
- * @covers \AlfacodeTeam\PhpIoCli\AbstractCommand
- */
+#[CoversClass(\AlfacodeTeam\PhpIoCli\AbstractCommand::class)]
 final class AbstractCommandTest extends TestCase
 {
     // ---------------------------------------------------------------

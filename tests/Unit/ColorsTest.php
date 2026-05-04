@@ -6,10 +6,9 @@ namespace AlfacodeTeam\PhpIoCli\Tests\Unit;
 
 use AlfacodeTeam\PhpIoCli\Depends\Colors;
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
 
-/**
- * @covers \AlfacodeTeam\PhpIoCli\Depends\Colors
- */
+#[CoversClass(\AlfacodeTeam\PhpIoCli\Depends\Colors::class)]
 final class ColorsTest extends TestCase
 {
     protected function setUp(): void

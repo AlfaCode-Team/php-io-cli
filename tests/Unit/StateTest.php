@@ -6,10 +6,9 @@ namespace AlfacodeTeam\PhpIoCli\Tests\Unit;
 
 use AlfacodeTeam\PhpIoCli\Depends\State;
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
 
-/**
- * @covers \AlfacodeTeam\PhpIoCli\Depends\State
- */
+#[CoversClass(\AlfacodeTeam\PhpIoCli\Depends\State::class)]
 final class StateTest extends TestCase
 {
     // ---------------------------------------------------------------

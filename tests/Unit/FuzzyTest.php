@@ -6,10 +6,9 @@ namespace AlfacodeTeam\PhpIoCli\Tests\Unit;
 
 use AlfacodeTeam\PhpIoCli\Depends\Fuzzy;
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
 
-/**
- * @covers \AlfacodeTeam\PhpIoCli\Depends\Fuzzy
- */
+#[CoversClass(\AlfacodeTeam\PhpIoCli\Depends\Fuzzy::class)]
 final class FuzzyTest extends TestCase
 {
     // ---------------------------------------------------------------

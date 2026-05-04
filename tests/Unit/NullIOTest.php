@@ -6,10 +6,9 @@ namespace AlfacodeTeam\PhpIoCli\Tests\Unit;
 
 use AlfacodeTeam\PhpIoCli\NullIO;
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
 
-/**
- * @covers \AlfacodeTeam\PhpIoCli\NullIO
- */
+#[CoversClass(\AlfacodeTeam\PhpIoCli\NullIO::class)]
 final class NullIOTest extends TestCase
 {
     private NullIO $io;

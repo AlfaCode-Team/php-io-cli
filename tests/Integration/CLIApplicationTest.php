@@ -8,6 +8,7 @@ use AlfacodeTeam\PhpIoCli\AbstractCommand;
 use AlfacodeTeam\PhpIoCli\BufferIO;
 use AlfacodeTeam\PhpIoCli\CLIApplication;
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
 
 // ── Fixtures ─────────────────────────────────────────────────────────────────
 
@@ -44,9 +45,7 @@ final class GreetCommand extends AbstractCommand
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
-/**
- * @covers \AlfacodeTeam\PhpIoCli\CLIApplication
- */
+#[CoversClass(\AlfacodeTeam\PhpIoCli\CLIApplication::class)]
 final class CLIApplicationTest extends TestCase
 {
     private function makeApp(): CLIApplication

@@ -6,10 +6,9 @@ namespace AlfacodeTeam\PhpIoCli\Tests\Unit;
 
 use AlfacodeTeam\PhpIoCli\Depends\RenderContext;
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
 
-/**
- * @covers \AlfacodeTeam\PhpIoCli\Depends\RenderContext
- */
+#[CoversClass(\AlfacodeTeam\PhpIoCli\Depends\RenderContext::class)]
 final class RenderContextTest extends TestCase
 {
     public function test_default_dirty_is_true(): void

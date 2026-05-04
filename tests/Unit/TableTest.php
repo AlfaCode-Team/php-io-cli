@@ -7,10 +7,10 @@ namespace AlfacodeTeam\PhpIoCli\Tests\Unit;
 use AlfacodeTeam\PhpIoCli\Components\Table;
 use AlfacodeTeam\PhpIoCli\Depends\Colors;
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 
-/**
- * @covers \AlfacodeTeam\PhpIoCli\Components\Table
- */
+#[CoversClass(\AlfacodeTeam\PhpIoCli\Components\Table::class)]
 final class TableTest extends TestCase
 {
     protected function setUp(): void
@@ -70,9 +70,7 @@ final class TableTest extends TestCase
     // Styles
     // ---------------------------------------------------------------
 
-    /**
-     * @dataProvider styleProvider
-     */
+    #[DataProvider('styleProvider')]
     public function test_table_renders_with_different_styles(string $style): void
     {
         $output = Colors::strip(

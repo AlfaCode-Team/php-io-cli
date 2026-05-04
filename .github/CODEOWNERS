@@ -1,0 +1,35 @@
+# CODEOWNERS
+#
+# Each line is a pattern followed by one or more GitHub usernames / teams.
+# The last matching pattern takes precedence.
+# Docs: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# ── Default owner (catches everything not matched below) ──────────
+*                               @alfacode-team
+
+# ── Core source ───────────────────────────────────────────────────
+/src/                           @alfacode-team
+/src/Components/                @alfacode-team
+/src/Depends/                   @alfacode-team
+
+# ── Tests ─────────────────────────────────────────────────────────
+/tests/                         @alfacode-team
+
+# ── Examples / docs ───────────────────────────────────────────────
+/examples/                      @alfacode-team
+/docs/                          @alfacode-team
+README.md                       @alfacode-team
+CHANGELOG.md                    @alfacode-team
+
+# ── CI / release infrastructure ───────────────────────────────────
+/.github/                       @alfacode-team
+/Makefile                       @alfacode-team
+phpunit.xml.dist                @alfacode-team
+phpstan.neon                    @alfacode-team
+.php-cs-fixer.php               @alfacode-team
+rector.php                      @alfacode-team
+
+# ── Security-sensitive files ──────────────────────────────────────
+SECURITY.md                     @alfacode-team
+composer.json                   @alfacode-team
+composer.lock                   @alfacode-team

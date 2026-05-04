@@ -6,10 +6,9 @@ namespace AlfacodeTeam\PhpIoCli\Tests\Integration;
 
 use AlfacodeTeam\PhpIoCli\BufferIO;
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
 
-/**
- * @covers \AlfacodeTeam\PhpIoCli\BufferIO
- */
+#[CoversClass(\AlfacodeTeam\PhpIoCli\BufferIO::class)]
 final class BufferIOTest extends TestCase
 {
     // ---------------------------------------------------------------

@@ -7,10 +7,9 @@ namespace AlfacodeTeam\PhpIoCli\Tests\Unit;
 use AlfacodeTeam\PhpIoCli\Depends\Input;
 use AlfacodeTeam\PhpIoCli\Depends\State;
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
 
-/**
- * @covers \AlfacodeTeam\PhpIoCli\Depends\Input
- */
+#[CoversClass(\AlfacodeTeam\PhpIoCli\Depends\Input::class)]
 final class InputTest extends TestCase
 {
     // ---------------------------------------------------------------

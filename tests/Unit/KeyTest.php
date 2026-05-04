@@ -6,19 +6,17 @@ namespace AlfacodeTeam\PhpIoCli\Tests\Unit;
 
 use AlfacodeTeam\PhpIoCli\Depends\Key;
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 
-/**
- * @covers \AlfacodeTeam\PhpIoCli\Depends\Key
- */
+#[CoversClass(\AlfacodeTeam\PhpIoCli\Depends\Key::class)]
 final class KeyTest extends TestCase
 {
     // ---------------------------------------------------------------
     // normalize
     // ---------------------------------------------------------------
 
-    /**
-     * @dataProvider escapeSequenceProvider
-     */
+    #[DataProvider('escapeSequenceProvider')]
     public function test_normalize_maps_escape_sequences(string $raw, string $expected): void
     {
         $this->assertSame($expected, Key::normalize($raw));
@@ -64,9 +62,7 @@ final class KeyTest extends TestCase
     // isPrintable
     // ---------------------------------------------------------------
 
-    /**
-     * @dataProvider printableCharProvider
-     */
+    #[DataProvider('printableCharProvider')]
     public function test_is_printable_returns_true_for_printable_chars(string $char): void
     {
         $this->assertTrue(Key::isPrintable($char));
@@ -85,9 +81,7 @@ final class KeyTest extends TestCase
         ];
     }
 
-    /**
-     * @dataProvider nonPrintableCharProvider
-     */
+    #[DataProvider('nonPrintableCharProvider')]
     public function test_is_printable_returns_false_for_control_chars(string $char): void
     {
         $this->assertFalse(Key::isPrintable($char));

@@ -6,10 +6,9 @@ namespace AlfacodeTeam\PhpIoCli\Tests\Unit;
 
 use AlfacodeTeam\PhpIoCli\Hooks;
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
 
-/**
- * @covers \AlfacodeTeam\PhpIoCli\Hooks
- */
+#[CoversClass(\AlfacodeTeam\PhpIoCli\Hooks::class)]
 final class HooksTest extends TestCase
 {
     private Hooks $hooks;
