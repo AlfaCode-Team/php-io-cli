@@ -105,7 +105,7 @@
     "_example": {
       "extra": {
         "php-io-cli": {
-          "commands": [
+          "commands":[
             "App\\Commands\\ServeCommand",
             "App\\Commands\\MakeModelCommand",
             "App\\Commands\\MigrateCommand"
