@@ -5,11 +5,10 @@ declare(strict_types=1);
 namespace AlfacodeTeam\PhpIoCli\Tests\Unit;
 
 use AlfacodeTeam\PhpIoCli\Depends\ShellResult;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
-/**
- * @covers \AlfacodeTeam\PhpIoCli\Depends\ShellResult
- */
+#[CoversClass(ShellResult::class)]
 final class ShellResultTest extends TestCase
 {
     public function test_ok_returns_true_for_exit_code_zero(): void

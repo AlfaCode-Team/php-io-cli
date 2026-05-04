@@ -27,13 +27,13 @@ final class DatePicker extends Component
 
     protected function setup(): void
     {
-        $now = new DateTimeImmutable();
+        $now = new \DateTimeImmutable();
 
         $this->state->batch([
-            'year'  => (int) $now->format('Y'),
+            'year' => (int) $now->format('Y'),
             'month' => (int) $now->format('n'),
-            'day'   => (int) $now->format('j'),
-            'done'  => false,
+            'day' => (int) $now->format('j'),
+            'done' => false,
         ]);
 
         // 1. Precise Day/Week Navigation
@@ -47,8 +47,8 @@ final class DatePicker extends Component
         $this->input->bind([']', 'PAGE_DOWN'], fn($s) => $this->shiftMonth($s, 1));
 
         // 3. Shortcuts
-        $this->input->bind('t', function ($s): void {
-            $now = new DateTimeImmutable();
+        $this->input->bind('t', static function ($s): void {
+            $now = new \DateTimeImmutable();
             $s->batch([
                 'year' => (int) $now->format('Y'),
                 'month' => (int) $now->format('n'),
@@ -60,44 +60,6 @@ final class DatePicker extends Component
             $s->done = true;
             $this->stop();
         });
-    }
-
-    private function shiftDate(mixed $s, string $modify): void
-    {
-        $dt = $this->getSelectedDate()->modify($modify);
-        $s->batch([
-            'year'  => (int) $dt->format('Y'),
-            'month' => (int) $dt->format('n'),
-            'day'   => (int) $dt->format('j'),
-        ]);
-    }
-
-    private function shiftMonth(mixed $s, int $delta): void
-    {
-        $dt = $this->getSelectedDate();
-        // Modify month first
-        $newDt = $dt->modify(($delta > 0 ? '+' : '') . $delta . ' months');
-
-        // Handle PHP "overflow" (Jan 31 + 1 month = March 3). Clamp to last day of month.
-        if ((int) $newDt->format('n') !== ($dt->format('n') + $delta + 12) % 12 ?: 12) {
-            $newDt = $newDt->modify('last day of last month');
-        }
-
-        $s->batch([
-            'year'  => (int) $newDt->format('Y'),
-            'month' => (int) $newDt->format('n'),
-            'day'   => (int) $newDt->format('j'),
-        ]);
-    }
-
-    private function getSelectedDate(): DateTimeImmutable
-    {
-        return new DateTimeImmutable(sprintf(
-            '%04d-%02d-%02d',
-            $this->state->year,
-            $this->state->month,
-            $this->state->day
-        ));
     }
 
     public function render(): void
@@ -113,10 +75,10 @@ final class DatePicker extends Component
             Terminal::moveCursorUp($this->lastLines);
         }
 
-        $year  = (int) $this->state->year;
+        $year = (int) $this->state->year;
         $month = (int) $this->state->month;
-        $day   = (int) $this->state->day;
-        $done  = (bool) $this->state->done;
+        $day = (int) $this->state->day;
+        $done = (bool) $this->state->done;
 
         $lines = [];
         $lines[] = Colors::wrap('? ', Colors::CYAN) . Colors::wrap($this->question, Colors::BOLD);
@@ -138,7 +100,7 @@ final class DatePicker extends Component
                 $isToday = $this->isToday($year, $month, $d);
                 $isSelected = ($d === $day);
 
-                $label = str_pad((string) $d, 2, ' ', STR_PAD_LEFT);
+                $label = mb_str_pad((string) $d, 2, ' ', STR_PAD_LEFT);
 
                 if ($isSelected) {
                     // Reverse video for the "Cursor"
@@ -160,7 +122,7 @@ final class DatePicker extends Component
                 }
             }
 
-            if (trim($currentLine) !== '') {
+            if (mb_trim($currentLine) !== '') {
                 $lines[] = $currentLine;
             }
 
@@ -172,7 +134,7 @@ final class DatePicker extends Component
         }
 
         // Atomic render
-        $output = "";
+        $output = '';
         foreach ($lines as $line) {
             $output .= "\r\033[2K" . $line . PHP_EOL;
         }
@@ -181,13 +143,51 @@ final class DatePicker extends Component
         $this->lastLines = count($lines);
     }
 
+    public function resolve(): \DateTimeImmutable
+    {
+        return $this->getSelectedDate();
+    }
+
+    private function shiftDate(mixed $s, string $modify): void
+    {
+        $dt = $this->getSelectedDate()->modify($modify);
+        $s->batch([
+            'year' => (int) $dt->format('Y'),
+            'month' => (int) $dt->format('n'),
+            'day' => (int) $dt->format('j'),
+        ]);
+    }
+
+    private function shiftMonth(mixed $s, int $delta): void
+    {
+        $dt = $this->getSelectedDate();
+        // Modify month first
+        $newDt = $dt->modify(($delta > 0 ? '+' : '') . $delta . ' months');
+
+        // Handle PHP "overflow" (Jan 31 + 1 month = March 3). Clamp to last day of month.
+        if ((int) $newDt->format('n') !== ($dt->format('n') + $delta + 12) % 12 ?: 12) {
+            $newDt = $newDt->modify('last day of last month');
+        }
+
+        $s->batch([
+            'year' => (int) $newDt->format('Y'),
+            'month' => (int) $newDt->format('n'),
+            'day' => (int) $newDt->format('j'),
+        ]);
+    }
+
+    private function getSelectedDate(): \DateTimeImmutable
+    {
+        return new \DateTimeImmutable(sprintf(
+            '%04d-%02d-%02d',
+            $this->state->year,
+            $this->state->month,
+            $this->state->day,
+        ));
+    }
+
     private function isToday(int $y, int $m, int $d): bool
     {
         return date('Y-m-d') === sprintf('%04d-%02d-%02d', $y, $m, $d);
-    }
-
-    public function resolve(): DateTimeImmutable
-    {
-        return $this->getSelectedDate();
     }
 }

@@ -4,11 +4,9 @@ declare(strict_types=1);
 
 namespace AlfacodeTeam\PhpIoCli;
 
-use Closure;
-
 final class Hooks
 {
-    /** @var array<string, array<int, Closure>> */
+    /** @var array<string, array<int, \Closure>> */
     private array $listeners = [];
 
     /**
@@ -16,7 +14,8 @@ final class Hooks
      */
     public function on(string $event, callable $listener): self
     {
-        $this->listeners[$event][] = Closure::fromCallable($listener);
+        $this->listeners[$event][] = \Closure::fromCallable($listener);
+
         return $this;
     }
 
@@ -27,6 +26,7 @@ final class Hooks
     {
         $wrapper = function (mixed $payload, string $event, Hooks $hooks) use ($listener, &$wrapper) {
             $this->off($event, $wrapper);
+
             return $listener($payload, $event, $hooks);
         };
 
@@ -36,7 +36,7 @@ final class Hooks
     /**
      * Unsubscribe from an event.
      */
-    public function off(string $event, ?callable $listener = null): self
+    public function off(string $event, callable|null $listener = null): self
     {
         if (!isset($this->listeners[$event])) {
             return $this;
@@ -44,12 +44,13 @@ final class Hooks
 
         if ($listener === null) {
             unset($this->listeners[$event]);
+
             return $this;
         }
 
         $this->listeners[$event] = array_values(array_filter(
             $this->listeners[$event],
-            fn($l) => $l !== $listener
+            static fn($l) => $l !== $listener,
         ));
 
         return $this;

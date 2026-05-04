@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace AlfacodeTeam\PhpIoCli\Components;
 
 use AlfacodeTeam\PhpIoCli\Depends\Colors;
-use AlfacodeTeam\PhpIoCli\Depends\Terminal;
 use AlfacodeTeam\PhpIoCli\Depends\Spinner as SpinnerEngine;
 use AlfacodeTeam\PhpIoCli\Depends\SpinnerFrames;
+use AlfacodeTeam\PhpIoCli\Depends\Terminal;
 
 /**
  * Enterprise Integrated Progress Bar
@@ -16,20 +16,27 @@ use AlfacodeTeam\PhpIoCli\Depends\SpinnerFrames;
 final class ProgressBar
 {
     private SpinnerEngine $spinner;
+
     private int $current = 0;
+
     private int $lastLines = 0;
+
     private float $startTime = 0.0;
+
     private string $status = '';
+
     private bool $finished = false;
 
     private int $width = 40;
+
     private string $fillChar = '█';
+
     private string $emptyChar = '░';
 
     public function __construct(
         private string $label,
         private int $total = 0, // 0 = indeterminate
-        string $spinnerStyle = 'dots'
+        string $spinnerStyle = 'dots',
     ) {
         $this->spinner = new SpinnerEngine(SpinnerFrames::get($spinnerStyle));
     }
@@ -38,6 +45,7 @@ final class ProgressBar
     public function width(int $w): self
     {
         $this->width = $w;
+
         return $this;
     }
 
@@ -61,7 +69,7 @@ final class ProgressBar
     {
         if ($status !== '') {
             // Truncate to prevent line wrapping which breaks cursor math
-            $this->status = mb_strimwidth(trim($status), 0, 60, '...');
+            $this->status = mb_strimwidth(mb_trim($status), 0, 60, '...');
         }
         $this->draw();
     }
@@ -114,14 +122,14 @@ final class ProgressBar
         if ($this->finished) {
             // Finished State
             $msg = $finishMessage ?: "Completed: {$this->label}";
-            $lines[] = Colors::success($msg) . Colors::muted(sprintf(" (%.2fs)", $elapsed));
+            $lines[] = Colors::success($msg) . Colors::muted(sprintf(' (%.2fs)', $elapsed));
         } else {
             $frame = Colors::wrap($this->spinner->tick() ?: '', Colors::CYAN);
 
             if ($this->total > 0) {
                 // DETERMINATE MODE (Bar + Spinner + Status)
                 $pct = $this->current / $this->total;
-                $pctStr = str_pad((int) ($pct * 100) . '%', 4, ' ', STR_PAD_LEFT);
+                $pctStr = mb_str_pad((int) ($pct * 100) . '%', 4, ' ', STR_PAD_LEFT);
 
                 $lines[] = "{$frame} " . Colors::wrap($this->label, Colors::BOLD)
                          . Colors::muted(sprintf(' (%d/%d)', $this->current, $this->total));
@@ -140,7 +148,7 @@ final class ProgressBar
         }
 
         // 2. Atomic Render
-        $output = "";
+        $output = '';
         foreach ($lines as $line) {
             $output .= "\r\033[2K" . $line . PHP_EOL;
         }
@@ -152,13 +160,13 @@ final class ProgressBar
     private function buildBar(float $pct): string
     {
         $filledSize = (int) round($this->width * $pct);
-        $emptySize  = $this->width - $filledSize;
+        $emptySize = $this->width - $filledSize;
 
         $color = match (true) {
             $pct >= 1.0 => Colors::GREEN,
             $pct >= 0.7 => Colors::CYAN,
             $pct >= 0.3 => Colors::YELLOW,
-            default     => Colors::RED,
+            default => Colors::RED,
         };
 
         return Colors::wrap(str_repeat($this->fillChar, $filledSize), $color)

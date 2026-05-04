@@ -6,11 +6,11 @@ namespace AlfacodeTeam\PhpIoCli\Tests\Unit;
 
 use AlfacodeTeam\PhpIoCli\Components\Table;
 use AlfacodeTeam\PhpIoCli\Depends\Colors;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
-/**
- * @covers \AlfacodeTeam\PhpIoCli\Components\Table
- */
+#[CoversClass(Table::class)]
 final class TableTest extends TestCase
 {
     protected function setUp(): void
@@ -21,19 +21,6 @@ final class TableTest extends TestCase
     protected function tearDown(): void
     {
         Colors::enable();
-    }
-
-    private function plainTable(): string
-    {
-        return Colors::strip(
-            Table::make()
-                ->headers(['Name', 'Role', 'Status'])
-                ->rows([
-                    ['Alice', 'Admin', 'Active'],
-                    ['Bob', 'Editor', 'Inactive'],
-                ])
-                ->toString()
-        );
     }
 
     // ---------------------------------------------------------------
@@ -70,9 +57,7 @@ final class TableTest extends TestCase
     // Styles
     // ---------------------------------------------------------------
 
-    /**
-     * @dataProvider styleProvider
-     */
+    #[DataProvider('styleProvider')]
     public function test_table_renders_with_different_styles(string $style): void
     {
         $output = Colors::strip(
@@ -80,7 +65,7 @@ final class TableTest extends TestCase
                 ->headers(['Col'])
                 ->rows([['Value']])
                 ->style($style)
-                ->toString()
+                ->toString(),
         );
 
         $this->assertStringContainsString('Col', $output);
@@ -90,8 +75,8 @@ final class TableTest extends TestCase
     public static function styleProvider(): array
     {
         return [
-            'box'     => ['box'],
-            'bold'    => ['bold'],
+            'box' => ['box'],
+            'bold' => ['bold'],
             'compact' => ['compact'],
             'minimal' => ['minimal'],
         ];
@@ -120,7 +105,7 @@ final class TableTest extends TestCase
                 ->headers(['Left', 'Center', 'Right'])
                 ->rows([['a', 'b', 'c']])
                 ->align([0 => 'left', 1 => 'center', 2 => 'right'])
-                ->toString()
+                ->toString(),
         );
 
         $this->assertStringContainsString('Left', $output);
@@ -135,18 +120,31 @@ final class TableTest extends TestCase
     {
         // Even though the cell contains ANSI codes, the column should align correctly
         $coloredCell = Colors::wrap('Active', Colors::GREEN);
-        $output      = Colors::strip(
+        $output = Colors::strip(
             Table::make()
                 ->headers(['Name', 'Status'])
                 ->rows([
                     ['Alice', $coloredCell],
                     ['Bob',   'Inactive'],
                 ])
-                ->toString()
+                ->toString(),
         );
 
         $this->assertStringContainsString('Alice', $output);
         $this->assertStringContainsString('Active', $output);
         $this->assertStringContainsString('Inactive', $output);
+    }
+
+    private function plainTable(): string
+    {
+        return Colors::strip(
+            Table::make()
+                ->headers(['Name', 'Role', 'Status'])
+                ->rows([
+                    ['Alice', 'Admin', 'Active'],
+                    ['Bob', 'Editor', 'Inactive'],
+                ])
+                ->toString(),
+        );
     }
 }

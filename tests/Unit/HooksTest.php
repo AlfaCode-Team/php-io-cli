@@ -5,11 +5,10 @@ declare(strict_types=1);
 namespace AlfacodeTeam\PhpIoCli\Tests\Unit;
 
 use AlfacodeTeam\PhpIoCli\Hooks;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
-/**
- * @covers \AlfacodeTeam\PhpIoCli\Hooks
- */
+#[CoversClass(Hooks::class)]
 final class HooksTest extends TestCase
 {
     private Hooks $hooks;
@@ -27,7 +26,7 @@ final class HooksTest extends TestCase
     {
         $called = false;
 
-        $this->hooks->on('test', function () use (&$called): void {
+        $this->hooks->on('test', static function () use (&$called): void {
             $called = true;
         });
 
@@ -40,7 +39,7 @@ final class HooksTest extends TestCase
     {
         $received = null;
 
-        $this->hooks->on('data', function (mixed $payload) use (&$received): void {
+        $this->hooks->on('data', static function (mixed $payload) use (&$received): void {
             $received = $payload;
         });
 
@@ -53,13 +52,13 @@ final class HooksTest extends TestCase
     {
         $log = [];
 
-        $this->hooks->on('event', function () use (&$log): void {
+        $this->hooks->on('event', static function () use (&$log): void {
             $log[] = 'A';
         });
-        $this->hooks->on('event', function () use (&$log): void {
+        $this->hooks->on('event', static function () use (&$log): void {
             $log[] = 'B';
         });
-        $this->hooks->on('event', function () use (&$log): void {
+        $this->hooks->on('event', static function () use (&$log): void {
             $log[] = 'C';
         });
 
@@ -83,7 +82,7 @@ final class HooksTest extends TestCase
     {
         $count = 0;
 
-        $this->hooks->once('tick', function () use (&$count): void {
+        $this->hooks->once('tick', static function () use (&$count): void {
             $count++;
         });
 
@@ -102,7 +101,7 @@ final class HooksTest extends TestCase
     {
         $count = 0;
 
-        $listener = function () use (&$count): void {
+        $listener = static function () use (&$count): void {
             $count++;
         };
 
@@ -117,10 +116,10 @@ final class HooksTest extends TestCase
     {
         $count = 0;
 
-        $this->hooks->on('event', function () use (&$count): void {
+        $this->hooks->on('event', static function () use (&$count): void {
             $count++;
         });
-        $this->hooks->on('event', function () use (&$count): void {
+        $this->hooks->on('event', static function () use (&$count): void {
             $count++;
         });
 
@@ -144,18 +143,21 @@ final class HooksTest extends TestCase
     {
         $log = [];
 
-        $this->hooks->on('validate', function () use (&$log): ?string {
+        $this->hooks->on('validate', static function () use (&$log): ?string {
             $log[] = 'first';
+
             return null;
         });
 
-        $this->hooks->on('validate', function () use (&$log): ?string {
+        $this->hooks->on('validate', static function () use (&$log): ?string {
             $log[] = 'second';
+
             return 'HANDLED';
         });
 
-        $this->hooks->on('validate', function () use (&$log): ?string {
+        $this->hooks->on('validate', static function () use (&$log): ?string {
             $log[] = 'third'; // should NOT run
+
             return null;
         });
 
@@ -167,7 +169,7 @@ final class HooksTest extends TestCase
 
     public function test_dispatch_until_returns_null_when_no_listener_handles(): void
     {
-        $this->hooks->on('event', fn() => null);
+        $this->hooks->on('event', static fn() => null);
 
         $result = $this->hooks->dispatchUntil('event');
 
@@ -187,7 +189,7 @@ final class HooksTest extends TestCase
 
     public function test_on_and_off_return_self_for_chaining(): void
     {
-        $result = $this->hooks->on('a', fn() => null)->off('a');
+        $result = $this->hooks->on('a', static fn() => null)->off('a');
 
         $this->assertSame($this->hooks, $result);
     }

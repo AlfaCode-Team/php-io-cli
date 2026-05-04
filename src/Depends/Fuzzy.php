@@ -28,8 +28,8 @@ final class Fuzzy
         arsort($scored, SORT_NUMERIC);
 
         return array_map(
-            fn($i) => $items[$i],
-            array_keys($scored)
+            static fn($i) => $items[$i],
+            array_keys($scored),
         );
     }
 
@@ -38,8 +38,8 @@ final class Fuzzy
      */
     public static function score(string $query, string $value, int $tieBreaker = 0): int
     {
-        $query = mb_strtolower(trim($query));
-        $value = mb_strtolower(trim($value));
+        $query = mb_strtolower(mb_trim($query));
+        $value = mb_strtolower(mb_trim($value));
 
         if ($query === '') {
             return 0;
@@ -116,6 +116,7 @@ final class Fuzzy
                 }
             }
         }
+
         return $score;
     }
 }

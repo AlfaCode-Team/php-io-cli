@@ -5,11 +5,10 @@ declare(strict_types=1);
 namespace AlfacodeTeam\PhpIoCli\Tests\Unit;
 
 use AlfacodeTeam\PhpIoCli\Depends\Fuzzy;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
-/**
- * @covers \AlfacodeTeam\PhpIoCli\Depends\Fuzzy
- */
+#[CoversClass(Fuzzy::class)]
 final class FuzzyTest extends TestCase
 {
     // ---------------------------------------------------------------
@@ -101,7 +100,7 @@ final class FuzzyTest extends TestCase
 
     public function test_score_prefix_is_higher_than_substring(): void
     {
-        $prefixScore    = Fuzzy::score('php', 'php-framework');
+        $prefixScore = Fuzzy::score('php', 'php-framework');
         $substringScore = Fuzzy::score('php', 'my-php-app');
 
         $this->assertGreaterThan($substringScore, $prefixScore);
@@ -129,7 +128,7 @@ final class FuzzyTest extends TestCase
 
     public function test_filter_preserves_original_item_casing(): void
     {
-        $items   = ['Laravel', 'Symfony', 'SlimFramework'];
+        $items = ['Laravel', 'Symfony', 'SlimFramework'];
         $results = Fuzzy::filter($items, 'slim');
 
         $this->assertContains('SlimFramework', $results);

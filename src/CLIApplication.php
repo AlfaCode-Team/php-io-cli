@@ -4,14 +4,13 @@ declare(strict_types=1);
 
 namespace AlfacodeTeam\PhpIoCli;
 
-use AlfacodeTeam\PhpIoCli\Depends\Colors;
 use AlfacodeTeam\PhpIoCli\Components\Alert;
 use AlfacodeTeam\PhpIoCli\Components\Select as CustomSelect;
+use AlfacodeTeam\PhpIoCli\Depends\Colors;
 use Symfony\Component\Console\Helper\HelperSet;
 use Symfony\Component\Console\Helper\QuestionHelper;
 use Symfony\Component\Console\Input\ArgvInput;
 use Symfony\Component\Console\Output\ConsoleOutput;
-use Throwable;
 
 /**
  * CLIApplication — self-bootstrapping application runner.
@@ -58,14 +57,15 @@ final class CLIApplication
      * IO layer — built automatically on first access via io().
      * Can be replaced with withIO() for tests or custom environments.
      */
-    private ?IOInterface $io = null;
+    private IOInterface|null $io = null;
 
     private bool $catchExceptions = true;
-    private bool $debug           = false;
+
+    private bool $debug = false;
 
     public function __construct(
-        private string $name    = 'CLI Application',
-        private string $version = '1.0.0'
+        private string $name = 'CLI Application',
+        private string $version = '1.0.0',
     ) {}
 
     /* =========================================================
@@ -82,24 +82,8 @@ final class CLIApplication
     public function withIO(IOInterface $io): self
     {
         $this->io = $io;
+
         return $this;
-    }
-
-    /**
-     * Lazily builds and caches a ConsoleIO wired to the real terminal.
-     * Application code never calls this directly.
-     */
-    private function io(): IOInterface
-    {
-        if ($this->io === null) {
-            $this->io = new ConsoleIO(
-                new ArgvInput(),
-                new ConsoleOutput(),
-                new HelperSet([new QuestionHelper()])
-            );
-        }
-
-        return $this->io;
     }
 
     /* =========================================================
@@ -109,6 +93,7 @@ final class CLIApplication
     public function catchExceptions(bool $catch): self
     {
         $this->catchExceptions = $catch;
+
         return $this;
     }
 
@@ -121,6 +106,7 @@ final class CLIApplication
         foreach ($commands as $command) {
             $this->commands[$command->getName()] = $command;
         }
+
         return $this;
     }
 
@@ -134,6 +120,7 @@ final class CLIApplication
         if (!$this->has($name)) {
             throw new \InvalidArgumentException("Command not found: {$name}");
         }
+
         return $this->commands[$name];
     }
 
@@ -143,10 +130,11 @@ final class CLIApplication
         $cmds = $this->commands;
 
         if (!$includeHidden) {
-            $cmds = array_filter($cmds, fn($c) => !$c->isHidden());
+            $cmds = array_filter($cmds, static fn($c) => !$c->isHidden());
         }
 
         ksort($cmds);
+
         return $cmds;
     }
 
@@ -173,9 +161,10 @@ final class CLIApplication
         if (!is_file($composerJsonPath)) {
             if ($this->debug) {
                 $this->io()->writeError(Colors::warning(
-                    "discoverCommands: composer.json not found at: {$composerJsonPath}"
+                    "discoverCommands: composer.json not found at: {$composerJsonPath}",
                 ));
             }
+
             return $this;
         }
 
@@ -189,8 +178,9 @@ final class CLIApplication
 
         if (!is_array($json)) {
             $this->io()->writeError(Colors::warning(
-                "discoverCommands: invalid JSON in {$composerJsonPath}"
+                "discoverCommands: invalid JSON in {$composerJsonPath}",
             ));
+
             return $this;
         }
 
@@ -201,9 +191,10 @@ final class CLIApplication
             if (!is_string($fqcn) || !class_exists($fqcn)) {
                 if ($this->debug) {
                     $this->io()->writeError(Colors::muted(
-                        "  [discover] Skipped '{$fqcn}': class not found. Did you run composer dump-autoload?"
+                        "  [discover] Skipped '{$fqcn}': class not found. Did you run composer dump-autoload?",
                     ));
                 }
+
                 continue;
             }
 
@@ -212,9 +203,10 @@ final class CLIApplication
             if ($ref->isAbstract() || !$ref->isSubclassOf(AbstractCommand::class)) {
                 if ($this->debug) {
                     $this->io()->writeError(Colors::muted(
-                        "  [discover] Skipped '{$fqcn}': not a concrete AbstractCommand subclass."
+                        "  [discover] Skipped '{$fqcn}': not a concrete AbstractCommand subclass.",
                     ));
                 }
+
                 continue;
             }
 
@@ -222,16 +214,82 @@ final class CLIApplication
                 /** @var AbstractCommand $cmd */
                 $cmd = $ref->newInstance();
                 $this->add($cmd);
-            } catch (Throwable $e) {
+            } catch (\Throwable $e) {
                 if ($this->debug) {
                     $this->io()->writeError(Colors::muted(
-                        "  [discover] Skipped '{$fqcn}': {$e->getMessage()}"
+                        "  [discover] Skipped '{$fqcn}': {$e->getMessage()}",
                     ));
                 }
             }
         }
 
         return $this;
+    }
+
+    /* =========================================================
+       Entry point
+    ========================================================= */
+
+    /**
+     * Parse argv and run the matching command.
+     *
+     * @param string[]|null $argv Omit to use $_SERVER['argv'] automatically.
+     *
+     * @return int POSIX exit code (0 = success)
+     */
+    public function run(array|null $argv = null): int
+    {
+        $argv ??= array_slice($_SERVER['argv'] ?? [], 1);
+        $token = $argv[0] ?? '';
+        $rest = array_slice($argv, 1);
+
+        // ── Global flags ──────────────────────────────────────
+        if (in_array('--no-ansi', $argv, true)) {
+            Colors::disable();
+        }
+
+        if (in_array('--debug', $argv, true) || in_array('-d', $argv, true)) {
+            $this->debug = true;
+            if ($this->io() instanceof ConsoleIO) {
+                /** @var ConsoleIO $consoleIo */
+                $consoleIo = $this->io();
+                $consoleIo->enableDebugging(microtime(true));
+            }
+        }
+
+        // ── Dispatch ──────────────────────────────────────────
+        try {
+            return $this->dispatch($token, $rest);
+        } catch (\Throwable $e) {
+            if (!$this->catchExceptions) {
+                throw $e;
+            }
+
+            Alert::error('Fatal error', [$e->getMessage()]);
+
+            if ($this->debug) {
+                $this->io()->writeError(Colors::muted($e->getTraceAsString()));
+            }
+
+            return AbstractCommand::FAILURE;
+        }
+    }
+
+    /**
+     * Lazily builds and caches a ConsoleIO wired to the real terminal.
+     * Application code never calls this directly.
+     */
+    private function io(): IOInterface
+    {
+        if ($this->io === null) {
+            $this->io = new ConsoleIO(
+                new ArgvInput(),
+                new ConsoleOutput(),
+                new HelperSet([new QuestionHelper()]),
+            );
+        }
+
+        return $this->io;
     }
 
     /**
@@ -268,54 +326,6 @@ final class CLIApplication
     }
 
     /* =========================================================
-       Entry point
-    ========================================================= */
-
-    /**
-     * Parse argv and run the matching command.
-     *
-     * @param string[]|null $argv Omit to use $_SERVER['argv'] automatically.
-     * @return int POSIX exit code (0 = success)
-     */
-    public function run(?array $argv = null): int
-    {
-        $argv ??= array_slice($_SERVER['argv'] ?? [], 1);
-        $token = $argv[0] ?? '';
-        $rest  = array_slice($argv, 1);
-
-        // ── Global flags ──────────────────────────────────────
-        if (in_array('--no-ansi', $argv, true)) {
-            Colors::disable();
-        }
-
-        if (in_array('--debug', $argv, true) || in_array('-d', $argv, true)) {
-            $this->debug = true;
-            if ($this->io() instanceof ConsoleIO) {
-                /** @var ConsoleIO $consoleIo */
-                $consoleIo = $this->io();
-                $consoleIo->enableDebugging(microtime(true));
-            }
-        }
-
-        // ── Dispatch ──────────────────────────────────────────
-        try {
-            return $this->dispatch($token, $rest);
-        } catch (Throwable $e) {
-            if (!$this->catchExceptions) {
-                throw $e;
-            }
-
-            Alert::error('Fatal error', [$e->getMessage()]);
-
-            if ($this->debug) {
-                $this->io()->writeError(Colors::muted($e->getTraceAsString()));
-            }
-
-            return AbstractCommand::FAILURE;
-        }
-    }
-
-    /* =========================================================
        Dispatch
     ========================================================= */
 
@@ -331,6 +341,7 @@ final class CLIApplication
             $cmd->setRethrowExceptions(!$this->catchExceptions);
             $cmd->execute([], $this->io());
             $cmd->printHelp();
+
             return AbstractCommand::SUCCESS;
         }
 
@@ -353,6 +364,7 @@ final class CLIApplication
         if ($this->has($token)) {
             $cmd = $this->commands[$token];
             $cmd->setRethrowExceptions(!$this->catchExceptions);
+
             return $cmd->execute($rest, $this->io());
         }
 
@@ -369,6 +381,7 @@ final class CLIApplication
                 if (is_string($pick) && $this->has($pick)) {
                     $cmd = $this->commands[$pick];
                     $cmd->setRethrowExceptions(!$this->catchExceptions);
+
                     return $cmd->execute($rest, $this->io());
                 }
             } else {
@@ -395,8 +408,9 @@ final class CLIApplication
         $this->io()->write(
             Colors::wrap($this->name, [Colors::BOLD, Colors::CYAN])
             . '  '
-            . Colors::wrap("v{$this->version}", Colors::GREEN)
+            . Colors::wrap("v{$this->version}", Colors::GREEN),
         );
+
         return AbstractCommand::SUCCESS;
     }
 
@@ -410,6 +424,7 @@ final class CLIApplication
         $cmd->setRethrowExceptions(!$this->catchExceptions);
         $cmd->execute([], $this->io());
         $cmd->printHelp();
+
         return AbstractCommand::SUCCESS;
     }
 
@@ -421,6 +436,7 @@ final class CLIApplication
 
         if (empty($commands)) {
             $this->io()->write(Colors::muted('  No commands registered.'));
+
             return AbstractCommand::SUCCESS;
         }
 
@@ -442,13 +458,13 @@ final class CLIApplication
             }
 
             // Align descriptions by padding command names to same width
-            $maxLen = max(array_map(fn($n) => mb_strlen($n), array_keys($cmds)));
+            $maxLen = max(array_map(static fn($n) => mb_strlen($n), array_keys($cmds)));
 
             foreach ($cmds as $name => $cmd) {
                 $this->io()->write(sprintf(
                     '  %s  %s',
-                    Colors::wrap(str_pad($name, $maxLen), Colors::GREEN),
-                    Colors::muted($cmd->getDescription())
+                    Colors::wrap(mb_str_pad($name, $maxLen), Colors::GREEN),
+                    Colors::muted($cmd->getDescription()),
                 ));
             }
         }
@@ -472,7 +488,7 @@ final class CLIApplication
         $this->io()->write(
             Colors::wrap("  {$this->name}", [Colors::BOLD, Colors::CYAN])
             . '  '
-            . Colors::muted("v{$this->version}")
+            . Colors::muted("v{$this->version}"),
         );
         $this->io()->write(Colors::muted("  {$separator}"));
         $this->io()->write('');
@@ -497,6 +513,7 @@ final class CLIApplication
         }
 
         asort($matches);
+
         return array_keys($matches);
     }
 

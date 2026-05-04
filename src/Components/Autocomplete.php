@@ -20,33 +20,29 @@ use AlfacodeTeam\PhpIoCli\Depends\Terminal;
 final class Autocomplete extends Component
 {
     private int $lastLines = 0;
+
     private int $maxSuggestions = 6;
+
     private int $minDropdownWidth = 40;
 
     public function __construct(
         private string $question,
-        private array $suggestions
+        private array $suggestions,
     ) {
         parent::__construct();
-    }
-
-    public function maxSuggestions(int $n): self
-    {
-        $this->maxSuggestions = $n;
-        return $this;
     }
 
     protected function setup(): void
     {
         $this->state->batch([
-            'value'    => '',
-            'cursor'   => 0,
-            'focused'  => 0,
-            'done'     => false,
+            'value' => '',
+            'cursor' => 0,
+            'focused' => 0,
+            'done' => false,
         ]);
 
         // 1. Text Input Logic (Multibyte Safe)
-        $this->input->fallback(function ($s, $key): void {
+        $this->input->fallback(static function ($s, $key): void {
             if (Key::isPrintable($key)) {
                 $cur = (int) $s->cursor;
                 $val = (string) $s->value;
@@ -58,7 +54,7 @@ final class Autocomplete extends Component
         });
 
         // 2. Navigation & Deletion
-        $this->input->bind('BACKSPACE', function ($s): void {
+        $this->input->bind('BACKSPACE', static function ($s): void {
             $cur = (int) $s->cursor;
             if ($cur === 0) {
                 return;
@@ -70,10 +66,10 @@ final class Autocomplete extends Component
             $s->focused = 0;
         });
 
-        $this->input->bind('LEFT', fn($s) => $s->decrement('cursor'));
-        $this->input->bind('RIGHT', fn($s) => $s->increment('cursor', mb_strlen((string) $s->value)));
+        $this->input->bind('LEFT', static fn($s) => $s->decrement('cursor'));
+        $this->input->bind('RIGHT', static fn($s) => $s->increment('cursor', mb_strlen((string) $s->value)));
 
-        $this->input->bind('UP', function ($s): void {
+        $this->input->bind('UP', static function ($s): void {
             $s->decrement('focused');
         });
 
@@ -102,6 +98,7 @@ final class Autocomplete extends Component
                 if ($highlighted && $highlighted !== $val) {
                     $s->value = $highlighted;
                     $s->cursor = mb_strlen($highlighted);
+
                     return;
                 }
             }
@@ -111,17 +108,24 @@ final class Autocomplete extends Component
         });
     }
 
+    public function maxSuggestions(int $n): self
+    {
+        $this->maxSuggestions = $n;
+
+        return $this;
+    }
+
     public function render(): void
     {
         if ($this->lastLines > 0) {
             Terminal::moveCursorUp($this->lastLines);
         }
 
-        $val      = (string) $this->state->value;
-        $cur      = (int) $this->state->cursor;
-        $focused  = (int) $this->state->focused;
+        $val = (string) $this->state->value;
+        $cur = (int) $this->state->cursor;
+        $focused = (int) $this->state->focused;
         $filtered = $this->getFiltered();
-        $lines    = [];
+        $lines = [];
 
         // HEADER
         $lines[] = Colors::wrap('? ', Colors::CYAN) . Colors::wrap($this->question, Colors::BOLD);
@@ -129,12 +133,12 @@ final class Autocomplete extends Component
         if (!(bool) $this->state->done) {
             // INPUT LINE WITH VIRTUAL CARET
             $before = mb_substr($val, 0, $cur);
-            $at     = mb_substr($val, $cur, 1);
-            $after  = mb_substr($val, $cur + 1);
+            $at = mb_substr($val, $cur, 1);
+            $after = mb_substr($val, $cur + 1);
 
             // Caret styling (Reverse Video)
             $caretChar = ($at === '') ? ' ' : $at;
-            $caret     = Colors::wrap($caretChar, ["\033[7m", Colors::YELLOW]);
+            $caret = Colors::wrap($caretChar, ["\033[7m", Colors::YELLOW]);
 
             $lines[] = Colors::wrap('  › ', Colors::GRAY) . Colors::wrap($before, Colors::YELLOW) . $caret . Colors::wrap($after, Colors::YELLOW);
 
@@ -152,13 +156,18 @@ final class Autocomplete extends Component
         }
 
         // ATOMIC RENDER
-        $output = "";
+        $output = '';
         foreach ($lines as $line) {
             $output .= "\r\033[2K" . $line . PHP_EOL;
         }
         echo $output;
 
         $this->lastLines = count($lines);
+    }
+
+    public function resolve(): mixed
+    {
+        return $this->state->value;
     }
 
     private function renderDropdown(array $filtered, int $focused): array
@@ -184,7 +193,7 @@ final class Autocomplete extends Component
 
             // Padded line construction
             $contentLen = mb_strlen(Colors::strip($item));
-            $padding    = str_repeat(' ', max(0, $width - $contentLen - 4));
+            $padding = str_repeat(' ', max(0, $width - $contentLen - 4));
 
             $lines[] = Colors::wrap('    │ ', $t) . $icon . $text . $padding . Colors::wrap(' │', $t);
         }
@@ -197,11 +206,6 @@ final class Autocomplete extends Component
         $lines[] = Colors::wrap('    └' . str_repeat('─', $width) . '┘', $t);
 
         return $lines;
-    }
-
-    public function resolve(): mixed
-    {
-        return $this->state->value;
     }
 
     private function getFiltered(): array

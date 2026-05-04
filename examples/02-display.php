@@ -39,10 +39,10 @@ Alert::info('Maintenance window tonight 02:00–04:00 UTC');
 
 // ── Table ─────────────────────────────────────────────────────────
 
-Colors::line("  ── Tables ──────────────────────────────────", Colors::CYAN);
+Colors::line('  ── Tables ──────────────────────────────────', Colors::CYAN);
 echo PHP_EOL;
 
-Colors::line("  Box style (default):", Colors::BOLD);
+Colors::line('  Box style (default):', Colors::BOLD);
 Table::make()
     ->headers(['Service', 'Status', 'Latency', 'Requests'])
     ->rows([
@@ -54,7 +54,7 @@ Table::make()
     ->align([3 => 'right'])
     ->render();
 
-Colors::line("  Bold style:", Colors::BOLD);
+Colors::line('  Bold style:', Colors::BOLD);
 Table::make()
     ->headers(['Package', 'Version', 'License'])
     ->rows([
@@ -65,7 +65,7 @@ Table::make()
     ->style('bold')
     ->render();
 
-Colors::line("  Minimal style:", Colors::BOLD);
+Colors::line('  Minimal style:', Colors::BOLD);
 Table::make()
     ->headers(['Key', 'Value'])
     ->rows([
@@ -79,7 +79,7 @@ Table::make()
 
 // ── Progress Bar (Determinate) ────────────────────────────────────
 
-Colors::line("  ── Progress Bar (Determinate) ───────────────", Colors::CYAN);
+Colors::line('  ── Progress Bar (Determinate) ───────────────', Colors::CYAN);
 echo PHP_EOL;
 
 $bar = new ProgressBar('Processing records', 50);
@@ -94,7 +94,7 @@ $bar->finish('All 50 records processed');
 
 // ── Progress Bar (Indeterminate) ──────────────────────────────────
 
-Colors::line("  ── Progress Bar (Indeterminate) ────────────", Colors::CYAN);
+Colors::line('  ── Progress Bar (Indeterminate) ────────────', Colors::CYAN);
 echo PHP_EOL;
 
 $indeterminate = new ProgressBar('Connecting to cluster');
@@ -109,7 +109,7 @@ $indeterminate->finish('Connection established');
 
 // ── Spinner ───────────────────────────────────────────────────────
 
-Colors::line("  ── Spinner Styles ───────────────────────────", Colors::CYAN);
+Colors::line('  ── Spinner Styles ───────────────────────────', Colors::CYAN);
 echo PHP_EOL;
 
 $styles = ['dots', 'line', 'bars', 'pulse', 'arc', 'bounce'];
@@ -127,5 +127,5 @@ foreach ($styles as $style) {
 }
 
 echo PHP_EOL;
-Colors::line("  Display components demo complete!", [Colors::BOLD, Colors::GREEN]);
+Colors::line('  Display components demo complete!', [Colors::BOLD, Colors::GREEN]);
 echo PHP_EOL;

@@ -4,13 +4,12 @@ declare(strict_types=1);
 
 namespace AlfacodeTeam\PhpIoCli;
 
-use AlfacodeTeam\PhpIoCli\Depends\Colors;
-use AlfacodeTeam\PhpIoCli\Components\Autocomplete;
 use AlfacodeTeam\PhpIoCli\Components\Confirm;
 use AlfacodeTeam\PhpIoCli\Components\MultiSelect;
 use AlfacodeTeam\PhpIoCli\Components\Password;
 use AlfacodeTeam\PhpIoCli\Components\Select as CustomSelect;
 use AlfacodeTeam\PhpIoCli\Components\TextInput;
+use AlfacodeTeam\PhpIoCli\Depends\Colors;
 use Symfony\Component\Console\Helper\HelperSet;
 use Symfony\Component\Console\Helper\QuestionHelper;
 use Symfony\Component\Console\Input\InputInterface;
@@ -32,42 +31,29 @@ use Symfony\Component\Console\Question\Question;
  */
 class ConsoleIO extends BaseIO
 {
-    protected string $lastMessage    = '';
+    protected string $lastMessage = '';
+
     protected string $lastMessageErr = '';
-    private ?float   $startTime      = null;
+
+    private float|null   $startTime = null;
 
     private array $verbosityMap = [
-        self::QUIET        => OutputInterface::VERBOSITY_QUIET,
-        self::NORMAL       => OutputInterface::VERBOSITY_NORMAL,
-        self::VERBOSE      => OutputInterface::VERBOSITY_VERBOSE,
+        self::QUIET => OutputInterface::VERBOSITY_QUIET,
+        self::NORMAL => OutputInterface::VERBOSITY_NORMAL,
+        self::VERBOSE => OutputInterface::VERBOSITY_VERBOSE,
         self::VERY_VERBOSE => OutputInterface::VERBOSITY_VERY_VERBOSE,
-        self::DEBUG        => OutputInterface::VERBOSITY_DEBUG,
+        self::DEBUG => OutputInterface::VERBOSITY_DEBUG,
     ];
 
     public function __construct(
         protected InputInterface  $input,
         protected OutputInterface $output,
-        protected HelperSet       $helperSet
+        protected HelperSet       $helperSet,
     ) {}
 
     public function enableDebugging(float $startTime): void
     {
         $this->startTime = $startTime;
-    }
-
-    /* =========================================================
-       TTY detection
-    ========================================================= */
-
-    /**
-     * Returns true only when STDIN is a real TTY.
-     * Prevents Terminal::enableRaw() from conflicting with piped/memory streams.
-     */
-    private function isStdinTty(): bool
-    {
-        return $this->isInteractive()
-            && function_exists('posix_isatty')
-            && @posix_isatty(STDIN);
     }
 
     /* =========================================================
@@ -96,7 +82,7 @@ class ConsoleIO extends BaseIO
         return $this->getQuestionHelper()->ask(
             $this->input,
             $this->output,
-            new Question($question, $default)
+            new Question($question, $default),
         );
     }
 
@@ -120,7 +106,7 @@ class ConsoleIO extends BaseIO
         return (bool) $this->getQuestionHelper()->ask(
             $this->input,
             $this->output,
-            new ConfirmationQuestion($question, $default)
+            new ConfirmationQuestion($question, $default),
         );
     }
 
@@ -138,14 +124,15 @@ class ConsoleIO extends BaseIO
     public function askAndValidate(
         string   $question,
         callable $validator,
-        ?int     $attempts = null,
-        mixed    $default  = null
+        int|null     $attempts = null,
+        mixed    $default = null,
     ): mixed {
         if ($this->isStdinTty()) {
             $input = (new TextInput($question))
-                ->validate(function (string $value) use ($validator): ?string {
+                ->validate(static function (string $value) use ($validator): ?string {
                     try {
                         $validator($value);
+
                         return null;          // null = no error, validation passed
                     } catch (\Throwable $e) {
                         return $e->getMessage();
@@ -180,7 +167,7 @@ class ConsoleIO extends BaseIO
      * TAB to toggle visibility, live strength meter).
      * Otherwise: falls back to Symfony Question::setHidden().
      */
-    public function askAndHideAnswer(string $question): ?string
+    public function askAndHideAnswer(string $question): string|null
     {
         if ($this->isStdinTty()) {
             return (string) (new Password($question))->showStrength()->run();
@@ -208,15 +195,16 @@ class ConsoleIO extends BaseIO
      * Otherwise: falls back to Symfony ChoiceQuestion.
      *
      * @param string[] $choices
+     *
      * @phpstan-return ($multiselect is true ? list<string> : string|int|bool)
      */
     public function select(
         string     $question,
         array      $choices,
         mixed      $default,
-        bool|int   $attempts     = false,
+        bool|int   $attempts = false,
         string     $errorMessage = 'Value "%s" is invalid',
-        bool       $multiselect  = false
+        bool       $multiselect = false,
     ): int|string|array|bool {
         if ($this->isStdinTty()) {
             if ($multiselect) {
@@ -261,12 +249,74 @@ class ConsoleIO extends BaseIO
         $this->doWrite($messages, $newline, true, $verbosity, raw: true);
     }
 
+    /* =========================================================
+       OVERWRITE
+    ========================================================= */
+
+    public function overwrite(mixed $messages, bool $newline = true, int|null $size = null, int $verbosity = self::NORMAL): void
+    {
+        $this->doOverwrite($messages, $newline, $size, false, $verbosity);
+    }
+
+    public function overwriteError(mixed $messages, bool $newline = true, int|null $size = null, int $verbosity = self::NORMAL): void
+    {
+        $this->doOverwrite($messages, $newline, $size, true, $verbosity);
+    }
+
+    public function getErrorOutput(): OutputInterface
+    {
+        return ($this->output instanceof ConsoleOutputInterface)
+            ? $this->output->getErrorOutput()
+            : $this->output;
+    }
+
+    public function isInteractive(): bool
+    {
+        return $this->input->isInteractive();
+    }
+
+    public function isVerbose(): bool
+    {
+        return $this->output->getVerbosity() >= OutputInterface::VERBOSITY_VERBOSE;
+    }
+
+    public function isVeryVerbose(): bool
+    {
+        return $this->output->getVerbosity() >= OutputInterface::VERBOSITY_VERY_VERBOSE;
+    }
+
+    public function isDebug(): bool
+    {
+        return $this->output->getVerbosity() >= OutputInterface::VERBOSITY_DEBUG;
+    }
+
+    public function isDecorated(): bool
+    {
+        return $this->output->isDecorated();
+    }
+
+    /* =========================================================
+       TTY detection
+    ========================================================= */
+
+    /**
+     * Returns true only when STDIN is a real TTY.
+     * Prevents Terminal::enableRaw() from conflicting with piped/memory streams.
+     */
+    private function isStdinTty(): bool
+    {
+        return $this->isInteractive()
+            && !$this->input instanceof \Symfony\Component\Console\Input\StringInput
+            && function_exists('posix_isatty')
+            && @posix_isatty(STDIN);
+    }
+
     private function doWrite(
         mixed  $messages,
         bool   $newline,
         bool   $stderr,
         int    $verbosity,
-        bool   $raw = false
+        bool   $raw = false,
     ): void {
         $sfVerbosity = $this->verbosityMap[$verbosity] ?? OutputInterface::VERBOSITY_NORMAL;
 
@@ -277,10 +327,10 @@ class ConsoleIO extends BaseIO
         $messages = (array) $messages;
 
         if ($this->startTime !== null) {
-            $mem     = round(memory_get_usage() / 1024 / 1024, 1);
-            $time    = round(microtime(true) - $this->startTime, 2);
-            $prefix  = Colors::muted("[{$mem}MiB/{$time}s] ");
-            $messages = array_map(fn($m) => $prefix . $m, $messages);
+            $mem = round(memory_get_usage() / 1024 / 1024, 1);
+            $time = round(microtime(true) - $this->startTime, 2);
+            $prefix = Colors::muted("[{$mem}MiB/{$time}s] ");
+            $messages = array_map(static fn($m) => $prefix . $m, $messages);
         }
 
         $target = $stderr ? $this->getErrorOutput() : $this->output;
@@ -294,26 +344,12 @@ class ConsoleIO extends BaseIO
         }
     }
 
-    /* =========================================================
-       OVERWRITE
-    ========================================================= */
-
-    public function overwrite(mixed $messages, bool $newline = true, ?int $size = null, int $verbosity = self::NORMAL): void
-    {
-        $this->doOverwrite($messages, $newline, $size, false, $verbosity);
-    }
-
-    public function overwriteError(mixed $messages, bool $newline = true, ?int $size = null, int $verbosity = self::NORMAL): void
-    {
-        $this->doOverwrite($messages, $newline, $size, true, $verbosity);
-    }
-
     private function doOverwrite(
         mixed  $messages,
         bool   $newline,
-        ?int   $size,
+        int|null   $size,
         bool   $stderr,
-        int    $verbosity
+        int    $verbosity,
     ): void {
         $target = $stderr ? $this->getErrorOutput() : $this->output;
         $target->write("\r\033[K", false, OutputInterface::OUTPUT_RAW);
@@ -333,33 +369,5 @@ class ConsoleIO extends BaseIO
         }
 
         return $helper;
-    }
-
-    public function getErrorOutput(): OutputInterface
-    {
-        return ($this->output instanceof ConsoleOutputInterface)
-            ? $this->output->getErrorOutput()
-            : $this->output;
-    }
-
-    public function isInteractive(): bool
-    {
-        return $this->input->isInteractive();
-    }
-    public function isVerbose(): bool
-    {
-        return $this->output->getVerbosity() >= OutputInterface::VERBOSITY_VERBOSE;
-    }
-    public function isVeryVerbose(): bool
-    {
-        return $this->output->getVerbosity() >= OutputInterface::VERBOSITY_VERY_VERBOSE;
-    }
-    public function isDebug(): bool
-    {
-        return $this->output->getVerbosity() >= OutputInterface::VERBOSITY_DEBUG;
-    }
-    public function isDecorated(): bool
-    {
-        return $this->output->isDecorated();
     }
 }

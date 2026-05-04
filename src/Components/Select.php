@@ -21,7 +21,7 @@ final class Select extends Component
 
     public function __construct(
         private string $question,
-        private array $choices
+        private array $choices,
     ) {
         parent::__construct();
     }
@@ -33,15 +33,15 @@ final class Select extends Component
     protected function setup(): void
     {
         $this->state->batch([
-            'index'   => 0,
-            'search'  => '',
+            'index' => 0,
+            'search' => '',
             'choices' => $this->choices,
-            'result'  => null,
-            'done'    => false,
+            'result' => null,
+            'done' => false,
         ]);
 
         // Navigation
-        $this->input->bind('UP', function ($state): void {
+        $this->input->bind('UP', static function ($state): void {
             $state->decrement('index');
         });
 
@@ -51,7 +51,7 @@ final class Select extends Component
         });
 
         // Search logic
-        $this->input->bind('BACKSPACE', function ($state): void {
+        $this->input->bind('BACKSPACE', static function ($state): void {
             $state->search = mb_substr((string) $state->search, 0, -1);
             $state->index = 0;
         });
@@ -68,7 +68,7 @@ final class Select extends Component
         });
 
         // Typing fallback
-        $this->input->fallback(function ($state, $key): void {
+        $this->input->fallback(static function ($state, $key): void {
             if (Key::isPrintable($key)) {
                 $state->search .= $key;
                 $state->index = 0; // Reset index on new search
@@ -89,10 +89,10 @@ final class Select extends Component
 
         Terminal::hideCursor();
 
-        $done     = (bool) $this->state->done;
-        $search   = (string) $this->state->search;
+        $done = (bool) $this->state->done;
+        $search = (string) $this->state->search;
         $filtered = $this->getFiltered();
-        $lines    = [];
+        $lines = [];
 
         // Question Line
         $lines[] = Colors::wrap('? ', Colors::CYAN) . Colors::wrap($this->question, Colors::BOLD);
@@ -100,16 +100,16 @@ final class Select extends Component
         if (!$done) {
             // Search Bar Line
             $searchLabel = Colors::wrap('› ', Colors::GRAY);
-            $searchText  = $search !== ''
+            $searchText = $search !== ''
                 ? Colors::wrap($search, Colors::YELLOW) . Colors::wrap('▊', Colors::CYAN)
                 : Colors::wrap('Type to filter...', Colors::DIM);
 
             $lines[] = "  {$searchLabel}{$searchText}";
-            $lines[] = ""; // Spacer
+            $lines[] = ''; // Spacer
 
             // List Items
             if (empty($filtered)) {
-                $lines[] = Colors::wrap("    ✘ No matches found", Colors::RED);
+                $lines[] = Colors::wrap('    ✘ No matches found', Colors::RED);
             } else {
                 // Windowing (Enterprise scale: show 8 items max)
                 $windowSize = 8;
@@ -129,12 +129,12 @@ final class Select extends Component
 
                 // Scroll indicators for large lists
                 if ($total > $windowSize) {
-                    $lines[] = Colors::muted(sprintf("    (Showing %d of %d)", $windowSize, $total));
+                    $lines[] = Colors::muted(sprintf('    (Showing %d of %d)', $windowSize, $total));
                 }
             }
 
-            $lines[] = "";
-            $lines[] = Colors::muted("    ↑↓ navigate  •  ENTER select  •  Type to filter");
+            $lines[] = '';
+            $lines[] = Colors::muted('    ↑↓ navigate  •  ENTER select  •  Type to filter');
 
         } else {
             // Collapse UI on finish

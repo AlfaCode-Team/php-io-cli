@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace AlfacodeTeam\PhpIoCli\Depends;
 
 /**
- * Thin, testable wrapper around proc_open.
+ * Enterprise Shell Wrapper
  *
- * Features
+ * v1-> Features
  * ─────────
  * • Streams stdout AND stderr simultaneously with stream_select() so neither
  *   pipe can block the other (the classic deadlock trap with proc_open).
@@ -15,6 +15,11 @@ namespace AlfacodeTeam\PhpIoCli\Depends;
  *   caller can animate a SpinnerComponent with the most recent output line.
  * • Merges caller-supplied env vars over the current process environment.
  * • Returns an immutable ShellResult value object.
+ *
+ * Features:
+ * - Deadlock-free simultaneous stdout/stderr streaming.
+ * - Non-blocking stream_select for high-performance UI ticks.
+ * - Guaranteed capture of partial trailing lines (fixes test failures).
  *
  * Usage with SpinnerComponent
  * ───────────────────────────
@@ -48,110 +53,117 @@ final class Shell
      */
     public static function run(
         string   $command,
-        ?callable $tick  = null,
-        array    $env    = [],
-        string   $cwd    = '',
+        callable|null $tick = null,
+        array    $env = [],
+        string   $cwd = '',
     ): ShellResult {
         $descriptors = [
-            0 => ['pipe', 'r'],   // stdin  — we close this immediately
-            1 => ['pipe', 'w'],   // stdout
-            2 => ['pipe', 'w'],   // stderr
+            0 => ['pipe', 'r'], // stdin
+            1 => ['pipe', 'w'], // stdout
+            2 => ['pipe', 'w'], // stderr
         ];
 
-        // Merge caller env over the real process environment.
-        // array_merge resets numeric keys; this is intentional for env arrays.
-        $fullEnv = array_merge(
-            (array) (getenv() ?: []),
-            $env
-        );
+        // Ensure environment variables are preserved and merged
+        $fullEnv = array_merge((array) (getenv() ?: []), $env);
 
         $process = proc_open(
             $command,
             $descriptors,
             $pipes,
-            $cwd !== '' ? $cwd : (getcwd() ?: null),
-            $fullEnv
+            $cwd !== '' ? $cwd : null,
+            $fullEnv,
         );
 
         if (!is_resource($process)) {
             return new ShellResult(1, [], ["proc_open failed for: {$command}"]);
         }
 
-        // We never write to stdin.
+        // Close stdin immediately as we don't support interactive input here
         fclose($pipes[0]);
 
         stream_set_blocking($pipes[1], false);
         stream_set_blocking($pipes[2], false);
 
-        $stdout       = [];
-        $stderr       = [];
-        $stdoutBuf    = '';
-        $stderrBuf    = '';
-        $lastLine     = '';
+        $stdout = [];
+        $stderr = [];
+        $stdoutBuf = '';
+        $stderrBuf = '';
+        $lastLine = '';
         $lastIsStderr = false;
 
-        // ── Streaming loop ────────────────────────────────────
+        // --- Streaming Loop ---
         while (true) {
-            $read   = [$pipes[1], $pipes[2]];
-            $write  = null;
+            $read = [$pipes[1], $pipes[2]];
+            $write = null;
             $except = null;
 
-            // Wait up to 50 ms for data on either pipe.
-            // Returns false on error, 0 on timeout, >0 when data is ready.
+            // Wait 50ms for activity
             $changed = stream_select($read, $write, $except, 0, 50_000);
+
+            if ($changed === false) {
+                break; // System error
+            }
 
             if ($changed > 0) {
                 foreach ($read as $stream) {
                     $isStdout = ($stream === $pipes[1]);
                     $chunk = fread($stream, 4096);
 
-                    if ($chunk === false || $chunk === '') {
-                        continue;
-                    }
-
-                    if ($isStdout) {
-                        $stdoutBuf .= $chunk;
-                    } else {
-                        $stderrBuf .= $chunk;
+                    if ($chunk !== false && $chunk !== '') {
+                        if ($isStdout) {
+                            $stdoutBuf .= $chunk;
+                        } else {
+                            $stderrBuf .= $chunk;
+                        }
                     }
                 }
             }
 
-            // ── Drain complete lines from buffers ─────────────
-            foreach ([
-                'stdout' => [&$stdoutBuf, &$stdout, false],
-                'stderr' => [&$stderrBuf, &$stderr, true],
-            ] as [$buf, $collection, $isErr]) {
-                while (($pos = strpos($buf, "\n")) !== false) {
-                    $line       = rtrim(substr($buf, 0, $pos));
-                    $buf        = substr($buf, $pos + 1);
-                    $collection[] = $line;
-
-                    if ($line !== '') {
-                        $lastLine     = $line;
-                        $lastIsStderr = $isErr;
-                    }
-                }
+            // --- Process complete lines for STDOUT ---
+            while (($pos = mb_strpos($stdoutBuf, "\n")) !== false) {
+                $line = mb_rtrim(mb_substr($stdoutBuf, 0, $pos));
+                $stdoutBuf = mb_substr($stdoutBuf, $pos + 1);
+                $stdout[] = $line;
+                $lastLine = $line;
+                $lastIsStderr = false;
             }
 
-            // ── Tick callback (animation + last-line sub-label) ─
+            // --- Process complete lines for STDERR ---
+            while (($pos = mb_strpos($stderrBuf, "\n")) !== false) {
+                $line = mb_rtrim(mb_substr($stderrBuf, 0, $pos));
+                $stderrBuf = mb_substr($stderrBuf, $pos + 1);
+                $stderr[] = $line;
+                $lastLine = $line;
+                $lastIsStderr = true;
+            }
+
+            // --- UI Tick ---
             if ($tick !== null) {
                 $tick($lastLine, $lastIsStderr);
             }
 
-            // ── Check for EOF on both pipes ───────────────────
+            // Exit loop if both pipes are closed
             if (feof($pipes[1]) && feof($pipes[2])) {
-                // Flush any remaining partial lines
-                foreach ([
-                    [&$stdoutBuf, &$stdout, false],
-                    [&$stderrBuf, &$stderr, true],
-                ] as [$buf, $collection, $isErr]) {
-                    if (trim($buf) !== '') {
-                        $collection[] = rtrim($buf);
-                    }
-                }
                 break;
             }
+        }
+
+        // --- Final Flush ---
+        // Capture any remaining data that didn't end with a newline (Critical for tests!)
+        if (($trimmed = mb_rtrim($stdoutBuf)) !== '') {
+            $stdout[] = $trimmed;
+            $lastLine = $trimmed;
+            $lastIsStderr = false;
+        }
+        if (($trimmed = mb_rtrim($stderrBuf)) !== '') {
+            $stderr[] = $trimmed;
+            $lastLine = $trimmed;
+            $lastIsStderr = true;
+        }
+
+        // Final tick to update UI with last processed data
+        if ($tick !== null && $lastLine !== '') {
+            $tick($lastLine, $lastIsStderr);
         }
 
         fclose($pipes[1]);
@@ -163,12 +175,12 @@ final class Shell
     }
 
     /**
-     * Convenience: run and return trimmed stdout or null on failure.
-     * Good for quick value capture (e.g. reading a git config entry).
+     * Run and return trimmed stdout. Returns null on failure.
      */
-    public static function capture(string $command, string $cwd = ''): ?string
+    public static function capture(string $command, string $cwd = ''): string|null
     {
         $result = self::run($command, cwd: $cwd);
-        return $result->ok() ? trim($result->output()) : null;
+
+        return $result->ok() ? mb_trim($result->output()) : null;
     }
 }

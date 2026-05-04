@@ -15,17 +15,12 @@ use AlfacodeTeam\PhpIoCli\Depends\Terminal;
 final class Password extends Component
 {
     private bool $strengthMeter = false;
+
     private int $lastLines = 0;
 
     public function __construct(private string $question)
     {
         parent::__construct();
-    }
-
-    public function showStrength(): self
-    {
-        $this->strengthMeter = true;
-        return $this;
     }
 
     /* =========================================================
@@ -35,24 +30,24 @@ final class Password extends Component
     protected function setup(): void
     {
         $this->state->batch([
-            'value'   => '',
+            'value' => '',
             'visible' => false,
-            'done'    => false,
+            'done' => false,
         ]);
 
         // Capture characters
-        $this->input->fallback(function ($state, $key): void {
+        $this->input->fallback(static function ($state, $key): void {
             if (Key::isPrintable($key)) {
                 $state->value .= $key;
             }
         });
 
-        $this->input->bind('BACKSPACE', function ($state): void {
+        $this->input->bind('BACKSPACE', static function ($state): void {
             $state->value = mb_substr((string) $state->value, 0, -1);
         });
 
         // TAB toggles visibility
-        $this->input->bind('TAB', function ($state): void {
+        $this->input->bind('TAB', static function ($state): void {
             $state->visible = !(bool) $state->visible;
         });
 
@@ -60,6 +55,13 @@ final class Password extends Component
             $state->done = true;
             $this->stop();
         });
+    }
+
+    public function showStrength(): self
+    {
+        $this->strengthMeter = true;
+
+        return $this;
     }
 
     /* =========================================================
@@ -75,10 +77,10 @@ final class Password extends Component
 
         Terminal::hideCursor();
 
-        $value   = (string) $this->state->value;
+        $value = (string) $this->state->value;
         $visible = (bool) $this->state->visible;
-        $done    = (bool) $this->state->done;
-        $len     = mb_strlen($value);
+        $done = (bool) $this->state->done;
+        $len = mb_strlen($value);
 
         $lines = [];
 
@@ -102,11 +104,11 @@ final class Password extends Component
             }
 
             // Help Hint
-            $toggle  = $visible ? 'hide' : 'show';
+            $toggle = $visible ? 'hide' : 'show';
             $lines[] = Colors::muted("    TAB {$toggle} password  •  ENTER submit");
         } else {
             // Collapse UI on finish to keep terminal clean
-            $lines[] = Colors::success(" Password accepted ($len chars)");
+            $lines[] = Colors::success(" Password accepted ({$len} chars)");
         }
 
         // 2. Output with line clearing
@@ -140,7 +142,7 @@ final class Password extends Component
     private function buildStrengthBar(string $password): string
     {
         $score = 0;
-        $len   = mb_strlen($password);
+        $len = mb_strlen($password);
 
         if ($len >= 8) {
             $score++;
@@ -165,9 +167,9 @@ final class Password extends Component
         $index = max(0, min($score - 1, 4));
 
         $filled = str_repeat('━', $score);
-        $empty  = str_repeat('━', 5 - $score);
-        $label  = $labels[$index];
-        $color  = $colors[$index];
+        $empty = str_repeat('━', 5 - $score);
+        $label = $labels[$index];
+        $color = $colors[$index];
 
         return Colors::wrap($filled, $color)
             . Colors::muted($empty)

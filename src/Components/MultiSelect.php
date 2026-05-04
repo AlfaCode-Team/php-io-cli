@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace AlfacodeTeam\PhpIoCli\Components;
 
 use AlfacodeTeam\PhpIoCli\Depends\Colors;
-use AlfacodeTeam\PhpIoCli\Depends\Key;
 use AlfacodeTeam\PhpIoCli\Depends\Terminal;
 
 /**
@@ -26,7 +25,7 @@ final class MultiSelect extends Component
     {
         $this->state->batch(['index' => 0, 'selected' => [], 'done' => false]);
 
-        $this->input->bind('UP', fn($s) => $s->decrement('index'));
+        $this->input->bind('UP', static fn($s) => $s->decrement('index'));
         $this->input->bind('DOWN', fn($s) => $s->increment('index', count($this->choices) - 1));
         $this->input->bind(' ', function ($s): void {
             $val = $this->choices[$s->index];

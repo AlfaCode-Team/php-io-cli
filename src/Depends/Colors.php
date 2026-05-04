@@ -9,7 +9,38 @@ namespace AlfacodeTeam\PhpIoCli\Depends;
  */
 final class Colors
 {
-    private static ?bool $enabled = null;
+    /* --- Constants --- */
+    public const RESET = "\033[0m";
+
+    public const BOLD = "\033[1m";
+
+    public const DIM = "\033[2m";
+
+    public const ITALIC = "\033[3m";
+
+    public const UNDERLINE = "\033[4m";
+
+    public const RED = "\033[31m";
+
+    public const GREEN = "\033[32m";
+
+    public const YELLOW = "\033[33m";
+
+    public const BLUE = "\033[34m";
+
+    public const MAGENTA = "\033[35m";
+
+    public const CYAN = "\033[36m";
+
+    public const WHITE = "\033[37m";
+
+    public const GRAY = "\033[90m";
+
+    public const BLACK = "\033[30m";
+
+    public const BG_CYAN = "\033[46m";
+
+    private static bool|null $enabled = null;
 
     /**
      * Determine if the current environment supports/allows colors.
@@ -44,28 +75,11 @@ final class Colors
     {
         self::$enabled = true;
     }
+
     public static function disable(): void
     {
         self::$enabled = false;
     }
-
-    /* --- Constants --- */
-    public const RESET     = "\033[0m";
-    public const BOLD      = "\033[1m";
-    public const DIM       = "\033[2m";
-    public const ITALIC    = "\033[3m";
-    public const UNDERLINE = "\033[4m";
-
-    public const RED     = "\033[31m";
-    public const GREEN   = "\033[32m";
-    public const YELLOW  = "\033[33m";
-    public const BLUE    = "\033[34m";
-    public const MAGENTA = "\033[35m";
-    public const CYAN    = "\033[36m";
-    public const WHITE   = "\033[37m";
-    public const GRAY    = "\033[90m";
-    public const BLACK   = "\033[30m";
-    public const BG_CYAN = "\033[46m";
 
     /* --- Core --- */
 
@@ -76,6 +90,7 @@ final class Colors
         }
 
         $prefix = is_array($styles) ? implode('', $styles) : $styles;
+
         return $prefix . $text . self::RESET;
     }
 
@@ -85,8 +100,8 @@ final class Colors
      */
     public static function hex(string $hex, string $text = ''): string
     {
-        $hex = ltrim($hex, '#');
-        if (strlen($hex) === 3) {
+        $hex = mb_ltrim($hex, '#');
+        if (mb_strlen($hex) === 3) {
             $hex = $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];
         }
 

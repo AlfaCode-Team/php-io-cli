@@ -3,14 +3,14 @@
   "description": "Interactive CLI component runtime for PHP microservice and hexagonal architectures.",
   "type": "library",
   "license": "MIT",
-  "keywords":[
+  "keywords": [
     "cli",
     "hexagonal-architecture",
     "microservices",
     "io",
     "terminal"
   ],
-  "authors":[
+  "authors": [
     {
       "name": "Alfacode Team",
       "email": "shamavurasheed@gmail.com",
@@ -52,31 +52,54 @@
     }
   },
   "scripts": {
-    "test": "phpunit",
-    "test:coverage": "phpunit --coverage-html coverage",
-    "format": "php-cs-fixer fix --allow-risky=yes",
-    "lint": "php-cs-fixer fix --dry-run --allow-risky=yes",
-    "analyse": "phpstan analyse --memory-limit=256M",
-    "refactor": "rector process",
-    "mutation": "infection --threads=max",
-    "check":[
-      "@lint",
-      "@analyse",
+    "test":              "phpunit",
+    "test:unit":         "phpunit --testsuite Unit --no-coverage",
+    "test:integration":  "phpunit --testsuite Integration --no-coverage",
+    "test:coverage":     "phpunit --coverage-html build/coverage/html --coverage-clover build/coverage/clover.xml",
+    "test:coverage:text":"phpunit --coverage-text",
+
+    "phpstan":           "phpstan analyse --memory-limit=256M",
+    "stan":              "@phpstan",
+
+    "cs-check":          "php-cs-fixer fix --dry-run --diff --allow-unsupported-php-version=yes --config=php-cs-fixer.php",
+    "cs-fix":            "php-cs-fixer fix --allow-unsupported-php-version=yes --config=php-cs-fixer.php",
+
+    "refactor":          "rector process",
+    "mutation":          "infection --threads=max --min-msi=60 --min-covered-msi=80",
+
+    "check": [
+      "@cs-check",
+      "@phpstan",
       "@test"
-    ]
+    ],
+
+    "check:full": [
+      "@cs-check",
+      "@phpstan",
+      "@test:coverage",
+      "@mutation"
+    ],
+
+    "demo":              "php examples/demo.php"
   },
   "scripts-descriptions": {
-    "test": "Run unit tests",
-    "test:coverage": "Run unit tests with HTML coverage report",
-    "format": "Automatically format PHP code using PHP-CS-Fixer",
-    "lint": "Check coding standards without modifying files",
-    "analyse": "Run static analysis with PHPStan",
-    "refactor": "Run Rector to automatically upgrade code and apply design patterns",
-    "mutation": "Run mutation testing with Infection to verify test suite quality",
-    "check": "Run all checks (linting, static analysis, and tests)"
+    "test":              "Run the full test suite (Unit + Integration)",
+    "test:unit":         "Run Unit tests only (fast, no I/O, no TTY)",
+    "test:integration":  "Run Integration tests only",
+    "test:coverage":     "Run tests and generate HTML + Clover coverage reports",
+    "test:coverage:text":"Run tests and print coverage summary to stdout",
+    "phpstan":           "Run PHPStan static analysis at level 8",
+    "stan":              "Alias for phpstan",
+    "cs-check":          "Check code style without modifying files (dry-run)",
+    "cs-fix":            "Apply PHP CS Fixer rules to src/, tests/, examples/",
+    "refactor":          "Run Rector to apply automated code upgrades",
+    "mutation":          "Run mutation testing with Infection (min MSI 60 %, min covered 80 %)",
+    "check":             "Run cs-check + phpstan + tests (standard CI gate)",
+    "check:full":        "Run check + coverage + mutation (full quality gate)",
+    "demo":              "Launch the interactive component demo (requires a real TTY)"
   },
   "extra": {
-    "_comment": "── php-io-cli: command auto-discovery ──────────────────────────────────────",
+    "_comment":  "── php-io-cli: command auto-discovery ──────────────────────────────────────",
     "_comment2": "Applications that depend on this library should add their own 'extra.php-io-cli'",
     "_comment3": "block in THEIR composer.json (not this file). Example:",
     "_example": {

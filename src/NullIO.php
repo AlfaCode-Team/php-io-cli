@@ -19,18 +19,22 @@ class NullIO extends BaseIO
     {
         return false;
     }
+
     public function isVerbose(): bool
     {
         return false;
     }
+
     public function isVeryVerbose(): bool
     {
         return false;
     }
+
     public function isDebug(): bool
     {
         return false;
     }
+
     public function isDecorated(): bool
     {
         return false;
@@ -50,9 +54,9 @@ class NullIO extends BaseIO
     // FIX: same as above
     public function writeErrorRaw(string|array $messages, bool $newline = true, int $verbosity = self::NORMAL): void {}
 
-    public function overwrite($messages, bool $newline = true, ?int $size = null, int $verbosity = self::NORMAL): void {}
+    public function overwrite($messages, bool $newline = true, int|null $size = null, int $verbosity = self::NORMAL): void {}
 
-    public function overwriteError($messages, bool $newline = true, ?int $size = null, int $verbosity = self::NORMAL): void {}
+    public function overwriteError($messages, bool $newline = true, int|null $size = null, int $verbosity = self::NORMAL): void {}
 
     /* =========================================================
        Interactive — all return defaults
@@ -71,13 +75,13 @@ class NullIO extends BaseIO
     public function askAndValidate(
         string   $question,
         callable $validator,
-        ?int     $attempts = null,
-        mixed    $default  = null
+        int|null     $attempts = null,
+        mixed    $default = null,
     ): mixed {
         return $default;
     }
 
-    public function askAndHideAnswer(string $question): ?string
+    public function askAndHideAnswer(string $question): string|null
     {
         return null;
     }
@@ -86,9 +90,9 @@ class NullIO extends BaseIO
         string   $question,
         array    $choices,
         mixed    $default,
-        bool|int $attempts     = false,
+        bool|int $attempts = false,
         string   $errorMessage = 'Value "%s" is invalid',
-        bool     $multiselect  = false
+        bool     $multiselect = false,
     ): int|string|array|bool {
         return $default;
     }

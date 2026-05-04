@@ -24,9 +24,13 @@ use AlfacodeTeam\PhpIoCli\Depends\Colors;
 final class Table
 {
     private array $headers = [];
-    private array $rows    = [];
-    private string $style  = 'box';
+
+    private array $rows = [];
+
+    private string $style = 'box';
+
     private array $alignments = [];
+
     private bool $striped = true;
 
     private function __construct() {}
@@ -39,21 +43,28 @@ final class Table
     public function headers(array $headers): self
     {
         $this->headers = $headers;
+
         return $this;
     }
+
     public function rows(array $rows): self
     {
         $this->rows = $rows;
+
         return $this;
     }
+
     public function style(string $style): self
     {
         $this->style = $style;
+
         return $this;
     }
+
     public function striped(bool $enable = true): self
     {
         $this->striped = $enable;
+
         return $this;
     }
 
@@ -61,6 +72,7 @@ final class Table
     public function align(array $alignments): self
     {
         $this->alignments = $alignments;
+
         return $this;
     }
 
@@ -72,11 +84,11 @@ final class Table
     public function toString(): string
     {
         if (empty($this->headers) && empty($this->rows)) {
-            return "";
+            return '';
         }
 
         $colCount = $this->getColumnCount();
-        $widths   = $this->computeWidths($colCount);
+        $widths = $this->computeWidths($colCount);
 
         [$tl, $tr, $bl, $br, $hSep, $vSep, $tJoin, $bJoin, $lJoin, $rJoin, $cross] = $this->getBorders();
 
@@ -109,6 +121,7 @@ final class Table
         foreach ($this->rows as $row) {
             $max = max($max, count($row));
         }
+
         return $max;
     }
 
@@ -128,6 +141,7 @@ final class Table
                 $widths[$i] = max($widths[$i], $visualLength);
             }
         }
+
         return $widths;
     }
 
@@ -153,6 +167,7 @@ final class Table
         }
 
         $vSep = Colors::muted($sep);
+
         return $vSep . implode($vSep, $parts) . $vSep;
     }
 
@@ -162,9 +177,9 @@ final class Table
         $diff = max(0, $targetWidth - $visualLen);
 
         return match ($align) {
-            'right'  => str_repeat(' ', $diff) . $text,
+            'right' => str_repeat(' ', $diff) . $text,
             'center' => str_repeat(' ', (int) floor($diff / 2)) . $text . str_repeat(' ', (int) ceil($diff / 2)),
-            default  => $text . str_repeat(' ', $diff),
+            default => $text . str_repeat(' ', $diff),
         };
     }
 
@@ -174,6 +189,7 @@ final class Table
         foreach ($widths as $w) {
             $segments[] = str_repeat($h, $w + 2);
         }
+
         return Colors::muted($l . implode($join, $segments) . $r);
     }
 
@@ -182,8 +198,8 @@ final class Table
         return match ($this->style) {
             'compact' => ['┌','┐','└','┘','─','│','┬','┴','├','┤','┼'],
             'minimal' => [' ',' ',' ',' ','─',' ','─','─','─','─',' '],
-            'bold'    => ['┏','┓','┗','┛','━','┃','┳','┻','┣','┫','╋'],
-            default   => ['╔','╗','╚','╝','═','║','╦','╩','╠','╣','╬'],
+            'bold' => ['┏','┓','┗','┛','━','┃','┳','┻','┣','┫','╋'],
+            default => ['╔','╗','╚','╝','═','║','╦','╩','╠','╣','╬'],
         };
     }
 }

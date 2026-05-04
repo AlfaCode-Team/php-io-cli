@@ -25,6 +25,7 @@ final class RenderContext
     public function markDirty(): self
     {
         $this->dirty = true;
+
         return $this;
     }
 
@@ -34,6 +35,7 @@ final class RenderContext
     public function clear(): self
     {
         $this->dirty = false;
+
         return $this;
     }
 
@@ -59,7 +61,7 @@ final class RenderContext
         } else {
             $stty = shell_exec('stty size 2>/dev/null');
             if ($stty) {
-                [$rows, $cols] = explode(' ', trim($stty));
+                [$rows, $cols] = explode(' ', mb_trim($stty));
                 $this->height = (int) $rows;
                 $this->width = (int) $cols;
             }
@@ -74,6 +76,7 @@ final class RenderContext
     public function set(string $key, mixed $value): self
     {
         $this->meta[$key] = $value;
+
         return $this;
     }
 
