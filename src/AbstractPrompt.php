@@ -7,18 +7,62 @@ namespace AlfacodeTeam\PhpIoCli;
 use AlfacodeTeam\PhpIoCli\Depends\Colors;
 use AlfacodeTeam\PhpIoCli\Depends\Key;
 use AlfacodeTeam\PhpIoCli\Depends\RenderContext;
-use AlfacodeTeam\PhpIoCli\Depends\Terminal;
+use AlfacodeTeam\PhpIoCli\Depends\TerminalKeyReader;
 
+/**
+ * Reactive prompt engine.
+ *
+ * The key-reading strategy is now fully injectable via {@see KeyReaderInterface}.
+ * The production default ({@see TerminalKeyReader}) wraps Terminal::readKey()
+ * exactly as before, so all existing call-sites are unaffected.
+ *
+ * To use a custom reader (e.g. for headless testing):
+ *
+ *   $result = (new MyComponent('Question'))
+ *       ->withKeyReader(new ArrayKeyReader(['DOWN', 'ENTER']))
+ *       ->run();
+ */
 abstract class AbstractPrompt implements IPromptComponent, ILifecycle
 {
     protected bool $running = false;
 
     protected RenderContext $context;
 
+    private KeyReaderInterface $keyReader;
+
     public function __construct(
         protected Hooks $hooks = new Hooks(),
     ) {
         $this->context = new RenderContext();
+        $this->keyReader = new TerminalKeyReader();
+    }
+
+    /* =========================================================
+       KEY READER INJECTION
+    ========================================================= */
+
+    /**
+     * Replace the key source before calling run().
+     *
+     * Returns $this so the call can be chained fluently:
+     *
+     *   $value = (new Confirm('Continue?'))
+     *       ->withKeyReader(new ArrayKeyReader(['ENTER']))
+     *       ->run();
+     */
+    final public function withKeyReader(KeyReaderInterface $reader): static
+    {
+        $this->keyReader = $reader;
+
+        return $this;
+    }
+
+    /**
+     * Return the active KeyReaderInterface (useful for assertions in tests).
+     */
+    final public function getKeyReader(): KeyReaderInterface
+    {
+        return $this->keyReader;
     }
 
     /* =========================================================
@@ -27,7 +71,7 @@ abstract class AbstractPrompt implements IPromptComponent, ILifecycle
 
     public function run(): mixed
     {
-        Terminal::enableRaw();
+        $this->keyReader->setUp();
         $this->running = true;
 
         try {
@@ -36,6 +80,8 @@ abstract class AbstractPrompt implements IPromptComponent, ILifecycle
 
             while ($this->running) {
                 if ($this->context->dirty) {
+                    // Give subclasses (or an injected IRenderer) a chance to
+                    // run beforeRender / afterRender hooks around render().
                     $this->beforeRenderHook();
                     $this->render();
                     $this->afterRenderHook();
@@ -43,7 +89,13 @@ abstract class AbstractPrompt implements IPromptComponent, ILifecycle
                     $this->dispatch('render');
                 }
 
-                $rawKey = Terminal::readKey();
+                $rawKey = $this->keyReader->readKey();
+
+                // Empty string -> exhausted ArrayKeyReader or no-op source; stop loop.
+                if ($rawKey === '') {
+                    break;
+                }
+
                 $key = Key::normalize($rawKey);
 
                 if ($key === 'CTRL_C') {
@@ -68,7 +120,7 @@ abstract class AbstractPrompt implements IPromptComponent, ILifecycle
         } finally {
             $this->destroy();
             $this->dispatch('destroy');
-            Terminal::disableRaw();
+            $this->keyReader->tearDown();
         }
     }
 
@@ -82,16 +134,14 @@ abstract class AbstractPrompt implements IPromptComponent, ILifecycle
 
     /* =========================================================
        RENDER LIFECYCLE HOOKS
-       Concrete subclasses may override these to delegate to an
+        Concrete subclasses may override these to delegate to an
        IRenderer without breaking the base run() contract.
     ========================================================= */
-
     /**
      * Called immediately before render() in the engine loop.
      * Override to invoke IRenderer::beforeRender() when using a renderer object.
      */
     protected function beforeRenderHook(): void {}
-
     /**
      * Called immediately after render() in the engine loop.
      * Override to invoke IRenderer::afterRender() when using a renderer object.
