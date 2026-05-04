@@ -32,7 +32,7 @@ install:
 
 # ── Testing ───────────────────────────────────────────────────────────────────
 test:
-	vendor/bin/phpunit
+	vendor/bin/phpunit --no-coverage
 
 test-unit:
 	vendor/bin/phpunit --testsuite Unit --no-coverage

@@ -66,6 +66,7 @@ class ConsoleIO extends BaseIO
     private function isStdinTty(): bool
     {
         return $this->isInteractive()
+            && !$this->input instanceof \Symfony\Component\Console\Input\StringInput
             && function_exists('posix_isatty')
             && @posix_isatty(STDIN);
     }
