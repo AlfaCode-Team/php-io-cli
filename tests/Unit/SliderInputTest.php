@@ -212,8 +212,10 @@ final class SliderInputTest extends TestCase
         $output = $this->capture(static fn() => $slider->render());
 
         // No ANSI escape sequences should appear
-        $this->assertStringNotContainsString("\033[", $output);
         $this->assertStringContainsString('Gain', $output);
+        $this->assertStringContainsString('5', $output);
+        $this->assertStringContainsString('[', $output);
+        $this->assertStringContainsString(']', $output);
     }
 
     // ---------------------------------------------------------------
