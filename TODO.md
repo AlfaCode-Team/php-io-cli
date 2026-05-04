@@ -54,7 +54,7 @@ Status icons: 🔴 Not started · 🟡 In progress · 🟢 Done · ⚪ Deferred
 
 | Item | Priority | Status | Notes |
 |---|---|---|---|
-| **Abstract `AbstractPrompt`** — decouple `Terminal::readKey()` | P1 | 🔴 | Inject a `KeyReader` interface so components can be tested without a real terminal |
+| **Abstract `AbstractPrompt`** — decouple `Terminal::readKey()` | P1 | 🟢 | Done — `KeyReaderInterface`, `TerminalKeyReader`, `ArrayKeyReader`; `AbstractPrompt::withKeyReader()` injection; full test coverage in `KeyReaderTest.php` |
 | **`Component` base** — remove direct `echo` from `render()` | P1 | 🔴 | Components should write to an `OutputInterface` buffer, not `STDOUT` directly. Enables headless rendering. |
 | **Windows support** — full VT100 parity | P1 | 🔴 | `Terminal::readKey()` on Windows needs a separate implementation (no `stty`, use `ReadConsoleInput` via FFI or `sapi_windows_*`). Currently usable only in Windows Terminal / modern CMD. |
 | **Async / non-blocking loop** | P2 | 🔴 | Optional event loop hook (e.g. Swoole / ReactPHP / Revolt) so components can run inside coroutines without blocking the main thread |
