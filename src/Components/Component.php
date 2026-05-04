@@ -18,7 +18,7 @@ abstract class Component extends AbstractPrompt
 
     protected Renderer $renderer;
 
-    public function __construct(Hooks|null $hooks = null)
+    public function __construct(?Hooks $hooks = null)
     {
         parent::__construct($hooks ?? new Hooks());
         $this->state = new State();

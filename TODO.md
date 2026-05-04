@@ -23,13 +23,13 @@ Status icons: 🔴 Not started · 🟡 In progress · 🟢 Done · ⚪ Deferred
 | Integration: `AbstractCommand` | P0 | 🟢 | Done |
 | Integration: `CLIApplication` | P0 | 🟢 | Done |
 | Integration: `BufferIO` | P0 | 🟢 | Done |
-| Unit tests for `Alert` | P1 | 🔴 | Test output string contains expected borders + content |
-| Unit tests for `SpinnerFrames` | P1 | 🔴 | Verify all named frame sets return non-empty arrays |
-| Unit tests for `Spinner` | P1 | 🔴 | Tick advances frame; stop returns empty string |
-| Unit tests for `Renderer` | P1 | 🔴 | Tricky — requires capturing stdout; mock Terminal |
-| Integration: `BufferIO::setUserInputs` + commands | P1 | 🔴 | Test confirm/select prompts with pre-set inputs |
-| Integration: `Shell::run` (echo command) | P2 | 🔴 | Use `echo` / `printf` — safe cross-platform |
-| Integration: `Shell::capture` | P2 | 🔴 | Capture `php --version` or similar |
+| Unit tests for `Alert` | P1 | 🟢 | Done in `tests/Unit/AlertTest.php` |
+| Unit tests for `SpinnerFrames` | P1 | 🟢 | Done in `tests/Unit/SpinnerFramesTest.php` |
+| Unit tests for `Spinner` | P1 | 🟢 | Done in `tests/Unit/SpinnerTest.php` |
+| Unit tests for `Renderer` | P1 | 🟢 | Done in `tests/Unit/RendererTest.php` |
+| Integration: `BufferIO::setUserInputs` + commands | P1 | 🟢 | Done in `tests/Integration/BufferIOUserInputsTest.php` |
+| Integration: `Shell::run` (echo command) | P2 | 🟢 | Done in `tests/Integration/ShellTest.php` |
+| Integration: `Shell::capture` | P2 | 🟢 | Done in `tests/Integration/ShellTest.php` |
 | Mutation testing via Infection | P2 | 🔴 | Add `infection/infection` dev dep; configure `infection.json5` |
 | Coverage badge > 80% target | P2 | 🔴 | Depends on above items |
 
@@ -39,8 +39,8 @@ Status icons: 🔴 Not started · 🟡 In progress · 🟢 Done · ⚪ Deferred
 
 | Component | Priority | Status | Description |
 |---|---|---|---|
-| `SliderInput` | P1 | 🔴 | Horizontal bar slider for float/int ranges. Arrow keys ± step. |
-| `RadioGroup` | P1 | 🔴 | Like `Select` but renders all options at once (no scroll). Good for short lists ≤ 5. |
+| `SliderInput` | P1 | 🟢 | Done in `src/Components/SliderInput.php` — horizontal bar slider for float/int ranges; arrow keys ± step |
+| `RadioGroup` | P1 | 🟢 | Done in `src/Components/RadioGroup.php` — renders all options at once; ↑↓←→ navigate, 1-9 jump, multi-column layout |
 | `SearchableTreeSelect` | P2 | 🔴 | Nested tree navigation. `parent > child > grandchild` grouping. |
 | `TagInput` | P2 | 🔴 | Free-form comma-delimited tags with fuzzy autocomplete. |
 | `CodeEditor` | P3 | 🔴 | Minimal inline code block with basic syntax highlighting. |
@@ -70,12 +70,12 @@ Status icons: 🔴 Not started · 🟡 In progress · 🟢 Done · ⚪ Deferred
 
 | Item | Priority | Status | Notes |
 |---|---|---|---|
-| PHP CS Fixer config (`.php-cs-fixer.php`) | P1 | 🔴 | PER-CS style; add `composer cs-fix` and `composer cs-check` scripts |
-| `composer.json` scripts | P1 | 🔴 | `test`, `test:unit`, `test:integration`, `test:coverage`, `phpstan`, `cs-fix`, `cs-check` |
-| Rector config for upgrade automation | P2 | 🔴 | `rector.php` targeting PHP 8.2+ idioms |
+| PHP CS Fixer config (`.php-cs-fixer.php`) | P1 | 🟢 | Done — `php-cs-fixer.php` present with PER-CS style |
+| `composer.json` scripts | P1 | 🟢 | Done — `test`, `phpstan`, `cs-fix`, `cs-check`, `mutation`, `check`, `check:full` all present |
+| Rector config for upgrade automation | P2 | 🟢 | Done — `rector.php` present |
 | Dev container / GitHub Codespaces | P2 | 🔴 | `.devcontainer/devcontainer.json` with PHP 8.3, Xdebug, Composer |
-| Makefile for common tasks | P2 | 🔴 | `make test`, `make stan`, `make fix`, `make example` |
-| Interactive demo script | P1 | 🔴 | `php examples/demo.php` — a menu-driven tour of all components |
+| Makefile for common tasks | P2 | 🟢 | Done — `Makefile` present with `test`, `stan`, `fix`, `demo` etc. |
+| Interactive demo script | P1 | 🟢 | Done — `examples/demo.php` with menu-driven tour of all components |
 
 ---
 
@@ -84,7 +84,7 @@ Status icons: 🔴 Not started · 🟡 In progress · 🟢 Done · ⚪ Deferred
 | Item | Priority | Status | Notes |
 |---|---|---|---|
 | Per-component `@example` docblocks | P1 | 🔴 | Every component class should have a self-contained usage example in its docblock |
-| Architecture diagram (Mermaid) | P1 | 🔴 | Add `docs/architecture.md` with a Mermaid class/sequence diagram |
+| Architecture diagram (Mermaid) | P1 | 🟢 | Done — `architecture.md` with full Mermaid class/sequence/flow diagrams |
 | Video demo / GIF | P2 | 🔴 | Record a terminal session showing the interactive components; embed in README |
 | API reference (phpDocumentor) | P2 | 🔴 | Auto-generate and publish to GitHub Pages |
 | "Building your first command" tutorial | P2 | 🔴 | Step-by-step guide: create a command, add inputs, test it |
@@ -106,10 +106,10 @@ Status icons: 🔴 Not started · 🟡 In progress · 🟢 Done · ⚪ Deferred
 | Coverage badge in README | P1 | 🔴 | Depends on Codecov |
 | PHPStan badge | P1 | 🔴 | Add static badge once baseline is locked |
 | Packagist publish | P1 | 🔴 | Register on packagist.org; add `packagist` webhook to repo |
-| `SECURITY.md` | P1 | 🔴 | Responsible disclosure policy |
-| Dependabot for Composer | P2 | 🔴 | `.github/dependabot.yml` — weekly updates to dev deps |
+| `SECURITY.md` | P1 | 🟢 | Done |
+| Dependabot for Composer | P2 | 🟢 | Done — `.github/dependabot.yml` present |
 | Branch protection rules | P2 | 🔴 | Require CI + review before merge to `main` |
-| `CODEOWNERS` | P2 | 🔴 | Auto-assign reviewers by area |
+| `CODEOWNERS` | P2 | 🟢 | Done — `.github/CODEOWNERS` present |
 
 ---
 

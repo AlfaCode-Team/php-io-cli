@@ -10,7 +10,7 @@ final class Input
     private array $bindings = [];
 
     /**  */
-    private \Closure|null $fallback = null;
+    private ?\Closure $fallback = null;
 
     /**
      * Bind a handler to one or multiple keys.

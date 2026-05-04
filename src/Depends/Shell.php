@@ -53,7 +53,7 @@ final class Shell
      */
     public static function run(
         string   $command,
-        callable|null $tick = null,
+        ?callable $tick = null,
         array    $env = [],
         string   $cwd = '',
     ): ShellResult {
@@ -177,7 +177,7 @@ final class Shell
     /**
      * Run and return trimmed stdout. Returns null on failure.
      */
-    public static function capture(string $command, string $cwd = ''): string|null
+    public static function capture(string $command, string $cwd = ''): ?string
     {
         $result = self::run($command, cwd: $cwd);
 

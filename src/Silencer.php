@@ -33,7 +33,7 @@ class Silencer
      *
      * @return int      The old error reporting level.
      */
-    public static function suppress(int|null $mask = null): int
+    public static function suppress(?int $mask = null): int
     {
         if (!isset($mask)) {
             $mask = E_WARNING | E_NOTICE | E_USER_WARNING | E_USER_NOTICE | E_DEPRECATED | E_USER_DEPRECATED;

@@ -35,7 +35,7 @@ class ConsoleIO extends BaseIO
 
     protected string $lastMessageErr = '';
 
-    private float|null   $startTime = null;
+    private ?float   $startTime = null;
 
     private array $verbosityMap = [
         self::QUIET => OutputInterface::VERBOSITY_QUIET,
@@ -124,7 +124,7 @@ class ConsoleIO extends BaseIO
     public function askAndValidate(
         string   $question,
         callable $validator,
-        int|null     $attempts = null,
+        ?int     $attempts = null,
         mixed    $default = null,
     ): mixed {
         if ($this->isStdinTty()) {
@@ -167,7 +167,7 @@ class ConsoleIO extends BaseIO
      * TAB to toggle visibility, live strength meter).
      * Otherwise: falls back to Symfony Question::setHidden().
      */
-    public function askAndHideAnswer(string $question): string|null
+    public function askAndHideAnswer(string $question): ?string
     {
         if ($this->isStdinTty()) {
             return (string) (new Password($question))->showStrength()->run();
@@ -253,12 +253,12 @@ class ConsoleIO extends BaseIO
        OVERWRITE
     ========================================================= */
 
-    public function overwrite(mixed $messages, bool $newline = true, int|null $size = null, int $verbosity = self::NORMAL): void
+    public function overwrite(mixed $messages, bool $newline = true, ?int $size = null, int $verbosity = self::NORMAL): void
     {
         $this->doOverwrite($messages, $newline, $size, false, $verbosity);
     }
 
-    public function overwriteError(mixed $messages, bool $newline = true, int|null $size = null, int $verbosity = self::NORMAL): void
+    public function overwriteError(mixed $messages, bool $newline = true, ?int $size = null, int $verbosity = self::NORMAL): void
     {
         $this->doOverwrite($messages, $newline, $size, true, $verbosity);
     }
@@ -347,7 +347,7 @@ class ConsoleIO extends BaseIO
     private function doOverwrite(
         mixed  $messages,
         bool   $newline,
-        int|null   $size,
+        ?int   $size,
         bool   $stderr,
         int    $verbosity,
     ): void {

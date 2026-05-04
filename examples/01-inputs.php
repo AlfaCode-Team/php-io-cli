@@ -28,7 +28,7 @@ Colors::line("\n  php-io-cli — Interactive Components Demo\n", [Colors::BOLD, 
 $name = (new TextInput('What is your name?'))
     ->placeholder('e.g. Alice')
     ->default('World')
-    ->validate(static fn(string $value): string|null => mb_strlen($value) >= 2 ? null : 'Name must be at least 2 characters.')
+    ->validate(static fn(string $value): ?string => mb_strlen($value) >= 2 ? null : 'Name must be at least 2 characters.')
     ->run();
 
 Colors::line("  → Name: {$name}", Colors::GREEN);

@@ -19,7 +19,7 @@ final class Spinner
     private string $currentFrame = '';
 
     public function __construct(
-        array|null $frames = null,
+        ?array $frames = null,
         float $interval = 0.1,
     ) {
         $this->frames = $frames ?? SpinnerFrames::default();
