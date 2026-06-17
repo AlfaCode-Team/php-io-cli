@@ -45,7 +45,7 @@ abstract class AbstractCommand
 
     private bool $rethrowExceptions = false;
 
-    final public function __construct()
+    public function __construct()
     {
         $this->configure();
 
