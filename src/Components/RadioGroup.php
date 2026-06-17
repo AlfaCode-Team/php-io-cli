@@ -228,7 +228,7 @@ final class RadioGroup extends Component
         $lines   = [];
         $lines[] = '';
 
-        $chunks = array_chunk($this->choices, max(1, $this->columns), preserve_keys: true);
+        $chunks = array_chunk($this->choices, $this->columns, preserve_keys: true);
 
         foreach ($chunks as $row) {
             $parts = [];
