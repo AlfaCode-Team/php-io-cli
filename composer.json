@@ -20,7 +20,10 @@
   "autoload": {
     "psr-4": {
       "AlfacodeTeam\\PhpIoCli\\": "src/"
-    }
+    },
+    "files": [
+      "src/mb_polyfill.php"
+    ]
   },
   "autoload-dev": {
     "psr-4": {
