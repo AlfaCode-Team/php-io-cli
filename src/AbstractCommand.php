@@ -39,6 +39,31 @@ abstract class AbstractCommand
 
     private array $options = [];
 
+    /**
+     * Options the parser saw but no addOption() registered — used to fail loudly
+     * on a typo (e.g. `--tsl=both`) instead of silently ignoring it, or to offer a
+     * correction on a TTY. `spelling` is the user-facing form (`--long` / `-x`),
+     * `key` the bare name, `value` any attached `=value` (null for a bare flag).
+     *
+     * @var list<array{spelling: string, key: string, value: ?string}>
+     */
+    private array $unknownOptions = [];
+
+    /**
+     * Global flags injected by the launcher / CLIApplication that every command
+     * tolerates even though it does not register them itself. Without this an
+     * otherwise-valid `--no-ansi` or `--debug` would be reported as "unknown".
+     *
+     * @var array<string, true>
+     */
+    private const GLOBAL_OPTIONS = [
+        'no-ansi' => true, 'ansi' => true, 'debug' => true, 'help' => true,
+        'version' => true, 'quiet' => true, 'no-interaction' => true, 'verbose' => true,
+    ];
+
+    /** Short forms of the global flags above (see GLOBAL_OPTIONS). */
+    private const GLOBAL_SHORT = ['h' => true, 'V' => true, 'q' => true, 'n' => true, 'v' => true];
+
     // FIX 1: $rawTokens was assigned in execute() but never read anywhere — removed.
 
     private IOInterface $io;
@@ -61,6 +86,17 @@ abstract class AbstractCommand
     {
         $this->io = $io;
         $this->parseTokens($tokens);
+
+        // Handle unknown/misspelled options (e.g. `--tsl=both`) instead of silently
+        // ignoring them and generating the wrong output. On an INTERACTIVE terminal
+        // we offer to apply the obvious correction and carry on — a human is there
+        // to confirm. In a script / CI (non-interactive) we HARD FAIL, so a typo'd
+        // deploy flag can never slip through unnoticed.
+        if ($this->unknownOptions !== []) {
+            if (!$this->resolveUnknownOptions()) {
+                return self::INVALID;
+            }
+        }
 
         // FIX 2: The old condition was:
         //   !isset($this->arguments[$argName]) || $this->arguments[$argName] === null
@@ -315,13 +351,22 @@ abstract class AbstractCommand
             // 1. Long Options (--option or --option=value)
             if (str_starts_with($token, '--')) {
                 $bare = mb_ltrim($token, '-');
-                if (str_contains($bare, '=')) {
-                    [$key, $value] = explode('=', $bare, 2);
+                [$key, $value] = str_contains($bare, '=') ? explode('=', $bare, 2) : [$bare, null];
+
+                $known = array_key_exists($key, $this->optionDefs) || isset(self::GLOBAL_OPTIONS[$key]);
+                if (!$known) {
+                    // Flag the offending option (keeping any =value) so execute()
+                    // can fail with a hint, or — on a TTY — offer to auto-correct.
+                    $this->unknownOptions[] = ['spelling' => '--' . $key, 'key' => $key, 'value' => $value];
+                    continue;
+                }
+
+                if ($value !== null) {
                     $this->options[$key] = $value;
                 } else {
-                    $this->options[$bare] = true;
-                    if (($this->optionDefs[$bare]['acceptsValue'] ?? false) && isset($tokens[$i + 1]) && !str_starts_with($tokens[$i + 1], '-')) {
-                        $this->options[$bare] = $tokens[++$i];
+                    $this->options[$key] = true;
+                    if (($this->optionDefs[$key]['acceptsValue'] ?? false) && isset($tokens[$i + 1]) && !str_starts_with($tokens[$i + 1], '-')) {
+                        $this->options[$key] = $tokens[++$i];
                     }
                 }
 
@@ -332,8 +377,10 @@ abstract class AbstractCommand
             if (str_starts_with($token, '-') && mb_strlen($token) > 1) {
                 $chars = mb_str_split(mb_substr($token, 1));
                 foreach ($chars as $char) {
+                    $matched = false;
                     foreach ($this->optionDefs as $key => $def) {
                         if ($def['short'] === $char) {
+                            $matched = true;
                             $this->options[$key] = true;
                             if ($def['acceptsValue'] && isset($tokens[$i + 1]) && !str_starts_with($tokens[$i + 1], '-')) {
                                 $this->options[$key] = $tokens[++$i];
@@ -341,6 +388,11 @@ abstract class AbstractCommand
 
                             break;
                         }
+                    }
+                    if (!$matched && !isset(self::GLOBAL_SHORT[$char])) {
+                        // Short flags have no long-name to fuzzy-match against, so
+                        // key is left empty (no suggestion) — still a hard error.
+                        $this->unknownOptions[] = ['spelling' => '-' . $char, 'key' => '', 'value' => null];
                     }
                 }
 
@@ -357,5 +409,117 @@ abstract class AbstractCommand
                 $this->arguments[$argNames[$idx]] = $value;
             }
         }
+    }
+
+    /**
+     * Decide what to do with the options no addOption() registered. On an
+     * INTERACTIVE terminal, offer to apply an obvious correction (`--tsl` →
+     * `--tls`, keeping any =value) and continue — returning true. In a
+     * non-interactive context (script / CI), or when the user declines / there is
+     * no confident suggestion, print the error(s) and return false so execute()
+     * exits INVALID. This keeps a typo'd DEPLOY flag from ever passing silently
+     * while sparing a human at the keyboard a re-type.
+     */
+    private function resolveUnknownOptions(): bool
+    {
+        $interactive = $this->io->isInteractive();
+        $ok = true;
+
+        foreach ($this->unknownOptions as $unknown) {
+            $suggestKey = $this->suggestOptionKey($unknown['key']);
+
+            // Interactive + a confident correction → apply it and carry on, with a
+            // visible notice so the human sees what was interpreted. Never silent,
+            // never blocking.
+            if ($interactive && $suggestKey !== null) {
+                $this->options[$suggestKey] = $unknown['value'] ?? true;
+                $this->warning("Note: interpreting {$unknown['spelling']} as --{$suggestKey}.");
+                continue;
+            }
+
+            // Non-interactive (script / CI) or no confident suggestion → hard fail,
+            // so a typo'd deploy flag can never slip through silently.
+            $hint = $suggestKey !== null ? " — did you mean --{$suggestKey}?" : '';
+            $this->error("Unknown option: {$unknown['spelling']}{$hint}");
+            $ok = false;
+        }
+
+        if (!$ok) {
+            $this->muted('Run `' . $this->name . ' --help` to see the available options.');
+        }
+
+        return $ok;
+    }
+
+    /**
+     * The closest registered option KEY to an unknown one (`tsl` → `tls`), or null
+     * when nothing is near enough. Damerau-Levenshtein distance (so an adjacent
+     * transposition scores 1) capped relative to the token length, so only genuine
+     * typos are suggested.
+     */
+    private function suggestOptionKey(string $key): ?string
+    {
+        $needle = mb_ltrim($key, '-');
+        if ($needle === '') {
+            return null;
+        }
+
+        $best = null;
+        $bestDistance = PHP_INT_MAX;
+        foreach (array_keys($this->optionDefs) as $candidate) {
+            $distance = $this->damerauLevenshtein($needle, (string) $candidate);
+            if ($distance < $bestDistance) {
+                $bestDistance = $distance;
+                $best = (string) $candidate;
+            }
+        }
+
+        // Only suggest a close match (≤ a third of the length, min 2 edits).
+        $threshold = max(2, (int) floor(mb_strlen($needle) / 3));
+
+        return ($best !== null && $bestDistance <= $threshold) ? $best : null;
+    }
+
+    /**
+     * Optimal string alignment distance: like Levenshtein but a swap of two
+     * ADJACENT characters costs 1 edit. Enough to rank real typos (transpositions,
+     * a dropped/added/changed letter) ahead of coincidental same-length matches.
+     */
+    private function damerauLevenshtein(string $a, string $b): int
+    {
+        $la = mb_strlen($a);
+        $lb = mb_strlen($b);
+        if ($la === 0) {
+            return $lb;
+        }
+        if ($lb === 0) {
+            return $la;
+        }
+
+        $ca = mb_str_split($a);
+        $cb = mb_str_split($b);
+        $d  = [];
+        for ($i = 0; $i <= $la; $i++) {
+            $d[$i][0] = $i;
+        }
+        for ($j = 0; $j <= $lb; $j++) {
+            $d[0][$j] = $j;
+        }
+
+        for ($i = 1; $i <= $la; $i++) {
+            for ($j = 1; $j <= $lb; $j++) {
+                $cost = $ca[$i - 1] === $cb[$j - 1] ? 0 : 1;
+                $d[$i][$j] = min(
+                    $d[$i - 1][$j] + 1,        // deletion
+                    $d[$i][$j - 1] + 1,        // insertion
+                    $d[$i - 1][$j - 1] + $cost, // substitution
+                );
+                if ($i > 1 && $j > 1 && $ca[$i - 1] === $cb[$j - 2] && $ca[$i - 2] === $cb[$j - 1]) {
+                    $d[$i][$j] = min($d[$i][$j], $d[$i - 2][$j - 2] + 1); // transposition
+                }
+            }
+        }
+
+        return $d[$la][$lb];
     }
 }
