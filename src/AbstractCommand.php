@@ -45,6 +45,22 @@ abstract class AbstractCommand
 
     private bool $rethrowExceptions = false;
 
+    /**
+     * Options the user passed that this command never registered.
+     *
+     * @var list<array{token: string, name: string, value: string|bool}>
+     */
+    private array $unknownOptions = [];
+
+    /**
+     * Flags the launcher / CLIApplication inject into every command. A command
+     * that never registers them must still tolerate them.
+     */
+    private const GLOBAL_FLAGS = [
+        'help', 'quiet', 'verbose', 'version', 'ansi', 'no-ansi',
+        'no-interaction', 'debug', 'profile', 'working-dir',
+    ];
+
     public function __construct()
     {
         $this->configure();
@@ -61,6 +77,13 @@ abstract class AbstractCommand
     {
         $this->io = $io;
         $this->parseTokens($tokens);
+
+        // A misspelled flag used to be accepted silently: `--tsl=both` simply
+        // set an option nobody read, the command ran with its default, and the
+        // user got a wrong result with a zero exit code. Fail loudly instead.
+        if (($unknownExit = $this->rejectUnknownOptions()) !== null) {
+            return $unknownExit;
+        }
 
         // FIX 2: The old condition was:
         //   !isset($this->arguments[$argName]) || $this->arguments[$argName] === null
@@ -91,6 +114,116 @@ abstract class AbstractCommand
 
             return self::FAILURE;
         }
+    }
+
+
+    /**
+     * Record a long option the command never registered.
+     *
+     * Global launcher flags are exempt: CLIApplication injects --no-ansi,
+     * --debug and friends into every command, and a command that does not
+     * declare them must not choke on them.
+     */
+    private function noteIfUnknown(string $token, string $name, string|bool $value): void
+    {
+        if (isset($this->optionDefs[$name]) || \in_array($name, self::GLOBAL_FLAGS, true)) {
+            return;
+        }
+
+        $this->unknownOptions[] = ['token' => '--' . $name, 'name' => $name, 'value' => $value];
+    }
+
+    /**
+     * Fail — or, at a terminal, offer to autocorrect — on unknown options.
+     *
+     * @return int|null INVALID to abort, or null to continue into handle()
+     */
+    private function rejectUnknownOptions(): ?int
+    {
+        if ($this->unknownOptions === []) {
+            return null;
+        }
+
+        $invalid = false;
+
+        foreach ($this->unknownOptions as $unknown) {
+            $suggestion = $this->suggestOption($unknown['name']);
+
+            // At a real terminal a confident suggestion is applied rather than
+            // thrown back at the user — but it is always announced, never silent.
+            if ($suggestion !== null && $this->io->isInteractive()) {
+                $this->options[$suggestion] = $unknown['value'];
+                unset($this->options[$unknown['name']]);
+                $this->io->write(Colors::warning(
+                    "Unknown option: {$unknown['token']} — interpreting {$unknown['token']} as --{$suggestion}"
+                ));
+                // NOTE: token is the bare flag ("--tsl"), never the raw argv
+                // entry ("--tsl=both") — the value is carried onto the corrected
+                // option above, so echoing it back would be misleading.
+
+                continue;
+            }
+
+            $this->error("Unknown option: {$unknown['token']}");
+            if ($suggestion !== null) {
+                $this->error("  did you mean --{$suggestion}?");
+            }
+            $invalid = true;
+        }
+
+        return $invalid ? self::INVALID : null;
+    }
+
+    /**
+     * The closest registered option name, or null when nothing is close enough.
+     *
+     * Plain Levenshtein scores a TRANSPOSITION as two edits, so the very typo
+     * this exists to catch (--tsl for --tls) would tie with, or lose to, an
+     * unrelated option that happens to be two edits away. Treat a pure
+     * rearrangement of the same characters as a single edit so it ranks first.
+     */
+    private function suggestOption(string $name): ?string
+    {
+        $best         = null;
+        $bestDistance = PHP_INT_MAX;
+
+        foreach (\array_keys($this->optionDefs) as $candidate) {
+            $distance = \levenshtein($name, (string) $candidate);
+
+            if ($this->isTransposition($name, (string) $candidate)) {
+                $distance = 1;
+            }
+
+            if ($distance < $bestDistance) {
+                $bestDistance = $distance;
+                $best         = (string) $candidate;
+            }
+        }
+
+        if ($best === null) {
+            return null;
+        }
+
+        // Be conservative: only suggest when the edit is small relative to the
+        // word. "--totally-unrelated-flag" must produce no suggestion at all.
+        $threshold = (int) \max(1, \min(3, \intdiv(\mb_strlen($name), 3)));
+
+        return $bestDistance <= $threshold ? $best : null;
+    }
+
+    /** Same characters, different order — one mistyped keystroke, not two. */
+    private function isTransposition(string $a, string $b): bool
+    {
+        if ($a === $b || \mb_strlen($a) !== \mb_strlen($b)) {
+            return false;
+        }
+
+        $left  = \mb_str_split($a);
+        $right = \mb_str_split($b);
+        \sort($left);
+        \sort($right);
+
+        return $left === $right;
     }
 
     /**
@@ -318,11 +451,13 @@ abstract class AbstractCommand
                 if (str_contains($bare, '=')) {
                     [$key, $value] = explode('=', $bare, 2);
                     $this->options[$key] = $value;
+                    $this->noteIfUnknown($token, $key, $value);
                 } else {
                     $this->options[$bare] = true;
                     if (($this->optionDefs[$bare]['acceptsValue'] ?? false) && isset($tokens[$i + 1]) && !str_starts_with($tokens[$i + 1], '-')) {
                         $this->options[$bare] = $tokens[++$i];
                     }
+                    $this->noteIfUnknown($token, $bare, $this->options[$bare]);
                 }
 
                 continue;
@@ -332,15 +467,22 @@ abstract class AbstractCommand
             if (str_starts_with($token, '-') && mb_strlen($token) > 1) {
                 $chars = mb_str_split(mb_substr($token, 1));
                 foreach ($chars as $char) {
+                    $matched = false;
                     foreach ($this->optionDefs as $key => $def) {
                         if ($def['short'] === $char) {
                             $this->options[$key] = true;
                             if ($def['acceptsValue'] && isset($tokens[$i + 1]) && !str_starts_with($tokens[$i + 1], '-')) {
                                 $this->options[$key] = $tokens[++$i];
                             }
+                            $matched = true;
 
                             break;
                         }
+                    }
+                    if (!$matched) {
+                        // No long-name suggestion is possible for a single char,
+                        // so this always fails rather than autocorrecting.
+                        $this->unknownOptions[] = ['token' => '-' . $char, 'name' => $char, 'value' => true];
                     }
                 }
 
