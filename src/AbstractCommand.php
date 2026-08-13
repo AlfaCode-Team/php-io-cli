@@ -75,7 +75,7 @@ abstract class AbstractCommand
      *
      * @var list<array{token: string, name: string, value: string|bool}>
      */
-    private array $unknownOptions = [];
+    // private array $unknownOptions = [];
 
     /**
      * Flags the launcher / CLIApplication inject into every command. A command
