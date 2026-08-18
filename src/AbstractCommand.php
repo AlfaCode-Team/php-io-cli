@@ -479,7 +479,7 @@ abstract class AbstractCommand
                 if (!$known) {
                     // Flag the offending option (keeping any =value) so execute()
                     // can fail with a hint, or — on a TTY — offer to auto-correct.
-                    $this->unknownOptions[] = ['spelling' => '--' . $key, 'key' => $key, 'value' => $value];
+                    $this->unknownOptions[] = ['token' => '--' . $key, 'name' => $key, 'value' => $value];
                     continue;
                 }
 
