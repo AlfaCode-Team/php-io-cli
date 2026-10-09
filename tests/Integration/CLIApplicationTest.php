@@ -45,6 +45,25 @@ final class GreetCommand extends AbstractCommand
     }
 }
 
+final class SideEffectCommand extends AbstractCommand
+{
+    public static int $runs = 0;
+
+    protected function configure(): void
+    {
+        $this->name = 'wipe';
+        $this->description = 'Destroys data when run';
+        $this->addOption('force', 'f', 'Skip confirmation');
+    }
+
+    protected function handle(): int
+    {
+        self::$runs++;
+
+        return self::SUCCESS;
+    }
+}
+
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 #[CoversClass(CLIApplication::class)]
@@ -82,6 +101,57 @@ final class CLIApplicationTest extends TestCase
     // ---------------------------------------------------------------
     // Built-in commands
     // ---------------------------------------------------------------
+
+    // ---------------------------------------------------------------
+    // Help never runs the command
+    // ---------------------------------------------------------------
+
+    /**
+     * `<command> --help` used to execute() the command before printing its help
+     * (execute() was the only way to hand it an IO), so `migrate:fresh --help`
+     * dropped every table. Help must be side-effect free.
+     */
+    public function test_help_flag_prints_help_without_running_the_command(): void
+    {
+        SideEffectCommand::$runs = 0;
+        $io = new BufferIO();
+        $app = (new CLIApplication('TestApp', '1.0.0'))
+            ->withIO($io)
+            ->add(new SideEffectCommand());
+
+        $this->assertSame(AbstractCommand::SUCCESS, $app->run(['wipe', '--help']));
+        $this->assertSame(AbstractCommand::SUCCESS, $app->run(['wipe', '-h']));
+
+        $this->assertSame(0, SideEffectCommand::$runs);
+        $this->assertStringContainsString('Destroys data when run', $io->getOutput());
+        $this->assertStringContainsString('--force', $io->getOutput());
+    }
+
+    public function test_help_subcommand_prints_help_without_running_the_command(): void
+    {
+        SideEffectCommand::$runs = 0;
+        $io = new BufferIO();
+        $app = (new CLIApplication('TestApp', '1.0.0'))
+            ->withIO($io)
+            ->add(new SideEffectCommand());
+
+        $this->assertSame(AbstractCommand::SUCCESS, $app->run(['help', 'wipe']));
+
+        $this->assertSame(0, SideEffectCommand::$runs);
+        $this->assertStringContainsString('Command: wipe', $io->getOutput());
+    }
+
+    public function test_help_for_a_command_with_a_required_argument_still_prints(): void
+    {
+        $io = new BufferIO();
+        $app = (new CLIApplication('TestApp', '1.0.0'))
+            ->withIO($io)
+            ->add(new GreetCommand());
+
+        $this->assertSame(AbstractCommand::SUCCESS, $app->run(['greet', '--help']));
+        $this->assertStringContainsString('<name>', $io->getOutput());
+        $this->assertStringNotContainsString('Missing required argument', $io->getOutput());
+    }
 
     public function test_version_command_outputs_name_and_version(): void
     {

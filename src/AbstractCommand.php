@@ -266,8 +266,20 @@ abstract class AbstractCommand
        Help Generation
     ========================================================= */
 
-    final public function printHelp(): void
+    /**
+     * Print this command's help.
+     *
+     * Pass the IO to write to when the command has not run. Help must never
+     * require executing the command: `migrate:fresh --help` used to run
+     * `migrate:fresh` (dropping every table) because the only way to give the
+     * command an IO was execute().
+     */
+    final public function printHelp(?IOInterface $io = null): void
     {
+        if ($io !== null) {
+            $this->io = $io;
+        }
+
         $this->section('Command: ' . $this->name);
         $this->io->write($this->description . "\n");
 

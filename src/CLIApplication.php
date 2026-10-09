@@ -337,10 +337,9 @@ final class CLIApplication
             && $this->has($token)
             && (in_array('--help', $rest, true) || in_array('-h', $rest, true))
         ) {
-            $cmd = $this->commands[$token];
-            $cmd->setRethrowExceptions(!$this->catchExceptions);
-            $cmd->execute([], $this->io());
-            $cmd->printHelp();
+            // Print help WITHOUT running the command: help must be side-effect
+            // free (`migrate:fresh --help` must not drop anything).
+            $this->commands[$token]->printHelp($this->io());
 
             return AbstractCommand::SUCCESS;
         }
@@ -420,10 +419,7 @@ final class CLIApplication
             return $this->cmdList();
         }
 
-        $cmd = $this->commands[$commandName];
-        $cmd->setRethrowExceptions(!$this->catchExceptions);
-        $cmd->execute([], $this->io());
-        $cmd->printHelp();
+        $this->commands[$commandName]->printHelp($this->io());
 
         return AbstractCommand::SUCCESS;
     }
